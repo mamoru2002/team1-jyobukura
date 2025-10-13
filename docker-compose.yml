@@ -1,0 +1,57 @@
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
+      - /app/vendor/bundle
+    ports:
+      - "3001:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+       - ./backend/.env.development
+    environment:
+      DB_HOST: db
+      MYSQL_ROOT_PASSWORD: password
+      RAILS_ENV: development
+      DISABLE_DATABASE_ENVIRONMENT_CHECK: '1'
+    tty: true
+    stdin_open: true
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    command: yarn dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    tty: true
+
+  db:
+    image: mysql:8.4
+    platform: linux/amd64
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_ROOT_HOST: '%'
+    volumes:
+      - db-data-v2:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  db-data-v2:
+
