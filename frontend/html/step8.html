@@ -6,42 +6,8 @@
     <title>ジョブクラ！ - ダッシュボード</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Noto Sans JP', sans-serif; }
-        .fade-in { animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .quest-card { transition: all 0.2s ease-in-out; }
-        .quest-card:hover { transform: translateY(-3px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1); }
-        .quest-card.completed {
-            background-color: #F8FAFC; /* slate-50 */
-            border-left-color: #6EE7B7; /* emerald-300 */
-        }
-        .quest-card.completed .checkbox {
-            background-color: #10B981; /* emerald-500 */
-            border-color: #10B981;
-            color: white;
-            animation: check-pop 0.3s ease-in-out;
-        }
-        @keyframes check-pop {
-            0% { transform: scale(0.8); }
-            80% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-        .quest-card .checkbox { transition: all 0.2s; cursor: pointer; }
-        .xp-bar-fill { transition: width 0.5s cubic-bezier(0.25, 1, 0.5, 1); }
-        .level-up-animation {
-            animation: levelUp 1.5s cubic-bezier(0.25, 1, 0.5, 1);
-            display: inline-block;
-        }
-        @keyframes levelUp {
-            0% { transform: scale(1) translateY(0); opacity: 1; }
-            25% { transform: scale(1.8) translateY(-10px) rotate(-10deg); opacity: 1; color: #F59E0B; } /* amber-500 */
-            100% { transform: scale(1) translateY(0); opacity: 1; color: inherit; }
-        }
-    </style>
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/step8.css">
 </head>
 <body class="bg-slate-100 text-slate-800">
 
@@ -49,16 +15,16 @@
         <!-- Sidebar Navigation (Simplified for Dashboard) -->
         <aside class="w-64 bg-white p-8 border-r border-slate-200 flex flex-col justify-between">
             <div>
-                <h1 class="text-2xl font-bold text-indigo-600 mb-12">ジョブクラ！</h1>
+                <h1 class="text-2xl font-bold text-orange-600 mb-12">ジョブクラ！</h1>
                 <nav class="space-y-4">
-                    <a href="#" class="block font-bold text-indigo-600">ダッシュボード</a>
-                    <a href="#" class="block text-slate-500 hover:text-indigo-600">過去の記録</a>
-                    <a href="#" class="block text-slate-500 hover:text-indigo-600">設定</a>
+                    <a href="#" class="block font-bold text-orange-600">ダッシュボード</a>
+                    <a href="#" class="block text-slate-500 hover:text-orange-600">過去の記録</a>
+                    <a href="#" class="block text-slate-500 hover:text-orange-600">設定</a>
                 </nav>
             </div>
             <div class="text-sm text-slate-400">
                 <p>山本航暉さん</p>
-                <a href="#" class="hover:text-indigo-600">ログアウト</a>
+                <a href="#" class="hover:text-orange-600">ログアウト</a>
             </div>
         </aside>
 
@@ -69,7 +35,7 @@
                     <h2 class="text-3xl font-bold">ダッシュボード</h2>
                     <p class="text-slate-500">日々の仕事をクラフティングしていきましょう！</p>
                 </div>
-                <button class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition-all">
+                <button class="bg-orange-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-orange-700 transition-all">
                     ジョブクラを修正する
                 </button>
             </header>
@@ -84,7 +50,7 @@
                             <p class="font-semibold text-sm">クライアントAとの打ち合わせ</p>
                             <p class="text-xs text-slate-500 mt-1">→ 顧客の課題解決を通して、提案スキルを磨く場</p>
                             <div class="mt-2 border-t pt-2 flex flex-wrap gap-1">
-                                <span class="text-xs font-semibold py-0.5 px-2 rounded-full text-indigo-700 bg-indigo-100">成長する</span>
+                                <span class="text-xs font-semibold py-0.5 px-2 rounded-full text-orange-700 bg-orange-100">成長する</span>
                                 <span class="text-xs font-semibold py-0.5 px-2 rounded-full text-teal-700 bg-teal-100">〇〇部長</span>
                                 <span class="text-xs font-semibold py-0.5 px-2 rounded-full text-green-700 bg-green-100">提案者</span>
                             </div>
@@ -121,19 +87,19 @@
                             <span class="ml-auto text-xs font-bold text-green-500">+20 XP</span>
                         </div>
                         <!-- Quest Card 2 (Active) -->
-                        <div class="quest-card bg-white rounded-lg p-4 border-l-4 border-indigo-500 shadow-sm flex items-center space-x-4">
+                        <div class="quest-card bg-white rounded-lg p-4 border-l-4 border-orange-500 shadow-sm flex items-center space-x-4">
                             <div class="w-6 h-6 rounded border-2 border-slate-300 checkbox"></div>
                             <p class="flex-1">部長に壁打ちを依頼する</p>
                         </div>
                          <!-- Quest Card 3 (Active) -->
-                        <div class="quest-card bg-white rounded-lg p-4 border-l-4 border-indigo-500 shadow-sm flex items-center space-x-4">
+                        <div class="quest-card bg-white rounded-lg p-4 border-l-4 border-orange-500 shadow-sm flex items-center space-x-4">
                            <div class="w-6 h-6 rounded border-2 border-slate-300 checkbox"></div>
                             <p class="flex-1">朝の15分、新しい資料フォーマットを学習する</p>
                         </div>
                          <!-- Add more quests here -->
                     </div>
                     <div class="mt-4">
-                         <input type="text" class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-500 transition-all" placeholder="+ 新しいクエストを追加...">
+                         <input type="text" class="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:border-orange-500 transition-all" placeholder="+ 新しいクエストを追加...">
                     </div>
                 </div>
             </div>

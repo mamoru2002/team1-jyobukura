@@ -1,0 +1,15 @@
+/* STEP6 認知クラフティング 専用スタイル */
+.draggable-tag {
+    cursor: grab;
+}
+
+.job-card {
+    transition: all 0.2s ease-in-out;
+    border: 2px dashed transparent;
+}
+
+.job-card-hover {
+    background-color: #ECFDF5; /* green-50 */
+    border-color: #34D399; /* green-400 */
+}
+

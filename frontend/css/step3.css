@@ -1,0 +1,21 @@
+/* STEP3 動機・嗜好 専用スタイル */
+.tag {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.tag:hover {
+    transform: scale(1.05);
+    background-color: #FFEDD5; /* orange-100 */
+}
+
+.tag-selected {
+    background-color: #EA580C; /* orange-600 */
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.tag-selected:hover {
+    background-color: #C2410C; /* orange-700 */
+}
+
