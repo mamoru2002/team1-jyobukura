@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ジョブクラ！ - STEP7-1 アクションプランニング</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; }
+        .step-active { color: #4F46E5; font-weight: 700; }
+        .step-completed { color: #3B82F6; position: relative; padding-left: 20px; }
+        .step-completed::before { content: '✓'; position: absolute; left: 0; font-weight: bold; }
+        .progress-bar-fill { transition: width 0.5s ease-in-out; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        textarea:focus, input:focus {
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.4);
+            border-color: #6366F1; /* indigo-500 */
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-white p-8 border-r border-slate-200 flex flex-col justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-indigo-600 mb-12">ジョブクラ！</h1>
+                <nav class="space-y-4">
+                    <a href="#" class="block step-completed">STEP1 ビフォースケッチ</a>
+                    <a href="#" class="block step-completed">STEP2 省察</a>
+                    <a href="#" class="block step-completed">STEP3 動機・嗜好</a>
+                    <a href="#" class="block step-completed">STEP4 課題クラフティング</a>
+                    <a href="#" class="block step-completed">STEP5 関係性クラフティング</a>
+                    <a href="#" class="block step-completed">STEP6 認知クラフティング</a>
+                    <a href="#" class="block step-active">STEP7 アクションプラン</a>
+                </nav>
+            </div>
+             <!-- ... (Logout, etc) ... -->
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 p-12 flex flex-col">
+            <header class="mb-8">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-3xl font-bold">STEP7-1 アクションプランニング</h2>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-slate-500">7/7</span>
+                        <button class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 hover:bg-slate-300 flex items-center justify-center">？</button>
+                    </div>
+                </div>
+                <p class="text-slate-500">完成したマップを現実にするために、具体的な行動計画を立てていきましょう。</p>
+                <div class="w-full bg-slate-200 rounded-full h-2 mt-4">
+                    <div class="bg-indigo-600 h-2 rounded-full progress-bar-fill" style="width: 92%"></div>
+                </div>
+            </header>
+
+            <!-- Content Area: STEP7-1 -->
+            <div class="flex-1 grid grid-cols-2 gap-8 fade-in">
+                <!-- Left Panel: Final Map -->
+                <div class="bg-slate-100 rounded-2xl p-6 overflow-y-auto">
+                    <h3 class="font-bold mb-4 text-slate-700">あなたのクラフティング・マップ</h3>
+                    <div class="space-y-4">
+                        <div class="bg-white rounded-lg p-3 shadow-sm">
+                            <p class="font-semibold text-sm">クライアントAとの打ち合わせ</p>
+                            <p class="text-xs text-slate-500 mt-1">→ 顧客の課題解決を通して、提案スキルを磨く場</p>
+                            <div class="mt-2 border-t pt-2 flex flex-wrap gap-1">
+                                <span class="text-xs font-semibold py-0.5 px-2 rounded-full text-indigo-700 bg-indigo-100">成長する</span>
+                                <span class="text-xs font-semibold py-0.5 px-2 rounded-full text-teal-700 bg-teal-100">〇〇部長</span>
+                                <span class="text-xs font-semibold py-0.5 px-2 rounded-full text-green-700 bg-green-100">提案者</span>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg p-3 shadow-sm">
+                            <p class="font-semibold text-sm">定例会議の資料作成</p>
+                             <p class="text-xs text-slate-500 mt-1">→ チームの知見を集約し、次のアクションを促す</p>
+                             <div class="mt-2 border-t pt-2 flex flex-wrap gap-1">
+                                <span class="text-xs font-semibold py-0.5 px-2 rounded-full text-green-700 bg-green-100">ハブ役</span>
+                             </div>
+                        </div>
+                        <!-- ... other final cards ... -->
+                    </div>
+                </div>
+                
+                <!-- Right Panel: Planner -->
+                <div class="flex flex-col space-y-6">
+                     <div>
+                        <label for="plan-action" class="font-bold text-slate-700">次の1週間/1ヶ月で、何ができますか？</label>
+                        <textarea id="plan-action" rows="4" class="mt-2 w-full p-3 border border-slate-300 rounded-lg focus:outline-none transition-all" placeholder="（例）部長に壁打ちを依頼する"></textarea>
+                    </div>
+                    <div>
+                        <label for="plan-collaborator" class="font-bold text-slate-700">助けてくれそうな人は誰ですか？（3人まで）</label>
+                         <input type="text" id="plan-collaborator" class="mt-2 w-full p-3 border border-slate-300 rounded-lg focus:outline-none transition-all" placeholder="（例）〇〇さん、△△さん">
+                    </div>
+                    <div>
+                        <label for="plan-obstacle" class="font-bold text-slate-700">考えられる障壁と、その乗り越え方は？</label>
+                        <textarea id="plan-obstacle" rows="3" class="mt-2 w-full p-3 border border-slate-300 rounded-lg focus:outline-none transition-all" placeholder="（例）障壁：時間がない → 対策：カレンダーでタスクの時間をブロックする"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="mt-8 flex justify-end">
+                <button class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700 transition-all">
+                    クエストを作成する
+                </button>
+            </footer>
+        </main>
+    </div>
+</body>
+</html>
