@@ -1,56 +1,36 @@
-*.gem
-*.rbc
-/.config
-/coverage/
-/InstalledFiles
-/pkg/
-/spec/reports/
-/spec/examples.txt
-/test/tmp/
-/test/version_tmp/
-/tmp/
+# --- Backend (Rails) -------------------------------------------------
+backend/log/*
+!backend/log/.keep
+backend/tmp/*
+!backend/tmp/.keep
+backend/tmp/pids/*
+backend/tmp/cache/bootsnap/*
+backend/storage/*
+!backend/storage/.keep
+backend/public/assets
+backend/public/packs
+backend/public/uploads
+backend/.bundle/
+backend/vendor/bundle
+backend/.byebug_history
+# 環境変数ファイルは共有しない（例のみ残す運用）
+backend/.env
+backend/.env.*
 
-# Used by dotenv library to load environment variables.
-# .env
+# --- Frontend (Vite/React) ------------------------------------------
+frontend/node_modules
+frontend/dist
+frontend/.vite
+# env は共有しない（例のみ残す運用）
+frontend/.env
+frontend/.env.*
 
-# Ignore Byebug command history file.
-.byebug_history
+# --- Docker (ローカル専用の上書きはコミットしない) -------------------
+docker-compose.override.yml
 
-## Specific to RubyMotion:
-.dat*
-.repl_history
-build/
-*.bridgesupport
-build-iPhoneOS/
-build-iPhoneSimulator/
-
-## Specific to RubyMotion (use of CocoaPods):
-#
-# We recommend against adding the Pods directory to your .gitignore. However
-# you should judge for yourself, the pros and cons are mentioned at:
-# https://guides.cocoapods.org/using/using-cocoapods.html#should-i-check-the-pods-directory-into-source-control
-#
-# vendor/Pods/
-
-## Documentation cache and generated files:
-/.yardoc/
-/_yardoc/
-/doc/
-/rdoc/
-
-## Environment normalization:
-/.bundle/
-/vendor/bundle
-/lib/bundler/man/
-
-# for a library or gem, you might want to ignore these files since the code is
-# intended to run in multiple environments; otherwise, check them in:
-# Gemfile.lock
-# .ruby-version
-# .ruby-gemset
-
-# unless supporting rvm < 1.11.0 or doing something fancy, ignore this:
-.rvmrc
-
-# Used by RuboCop. Remote config files pulled in from inherit_from directive.
-# .rubocop-https?--*
+# --- 共通（OS/エディタ系） -------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+npm-debug.log*
+yarn-error.log*
