@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-ssr
+build
+coverage
+.vite
+*.local
+.env
+.env.local
+.env.production.local
+.env.development.local
