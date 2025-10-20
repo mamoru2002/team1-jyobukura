@@ -24,11 +24,18 @@ Rails.application.routes.draw do
         end
       end
       resources :action_plans, only: [:show, :create, :update]
-      
       resources :motivation_masters
       resources :preference_masters
       resources :people
       resources :role_categories
+
+      # STEP3: マスタ一覧（ユーザーIDでフィルタ済みの簡易取得）
+      get "masters/motivations", to: "masters#motivations"
+      get "masters/preferences",  to: "masters#preferences"
+
+      # STEP4: 仕事×動機 / 仕事×嗜好 の紐付けAPI（最小）
+      resources :work_item_motivations, only: [:create, :destroy]
+      resources :work_item_preferences,  only: [:create, :destroy]
     end
   end
 end
