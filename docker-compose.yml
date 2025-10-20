@@ -7,7 +7,7 @@ services:
       - ./backend:/app
       - /app/vendor/bundle
     ports:
-      - "3001:3000"
+      - "8001:3000"
     depends_on:
       db:
         condition: service_healthy
@@ -25,14 +25,16 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    command: yarn dev
+    command: npm run dev
     volumes:
       - ./frontend:/app
       - /app/node_modules
     ports:
-      - "3000:3000"
+      - "8000:3000"
     depends_on:
       - api
+    environment:
+      - VITE_API_URL=http://localhost:8001
     tty: true
 
   db:
@@ -44,7 +46,7 @@ services:
     volumes:
       - db-data-v2:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - "3307:3306"
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost"]
       interval: 5s

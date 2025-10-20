@@ -1,0 +1,268 @@
+.step7-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.step7-container h1 {
+  margin-bottom: 2rem;
+  color: #2c3e50;
+}
+
+.step7-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  height: calc(100vh - 150px);
+}
+
+.left-panel,
+.right-panel {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+}
+
+.left-panel h2,
+.right-panel h2 {
+  margin-bottom: 1.5rem;
+  color: #34495e;
+  font-size: 1.3rem;
+}
+
+.empty-message {
+  color: #7f8c8d;
+  text-align: center;
+  padding: 2rem;
+  font-style: italic;
+}
+
+/* Questions List */
+.questions-list {
+  list-style: none;
+  padding: 0;
+}
+
+.question-item {
+  background: #ecf0f1;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  border-left: 4px solid #3498db;
+}
+
+/* Quests List */
+.quests-list {
+  list-style: none;
+  padding: 0;
+}
+
+.quest-item {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  border: 2px solid #e9ecef;
+}
+
+.quest-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.quest-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.difficulty-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.difficulty-badge.easy {
+  background: #d4edda;
+  color: #155724;
+}
+
+.difficulty-badge.medium {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.difficulty-badge.hard {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.quest-description {
+  color: #6c757d;
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.quest-meta {
+  display: flex;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.xp-badge,
+.type-badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.xp-badge {
+  background: #ffeaa7;
+  color: #d63031;
+}
+
+.type-badge {
+  background: #dfe6e9;
+  color: #2d3436;
+}
+
+.quest-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.edit-btn,
+.delete-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.edit-btn {
+  background: #3498db;
+  color: white;
+}
+
+.edit-btn:hover {
+  background: #2980b9;
+}
+
+.delete-btn {
+  background: #e74c3c;
+  color: white;
+}
+
+.delete-btn:hover {
+  background: #c0392b;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #34495e;
+  font-weight: 600;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #dfe6e9;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.question-textarea {
+  width: 100%;
+  min-height: 150px;
+  padding: 1rem;
+  border: 2px solid #dfe6e9;
+  border-radius: 6px;
+  font-size: 1rem;
+  resize: vertical;
+  margin-bottom: 1rem;
+}
+
+.question-textarea:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.add-button,
+.next-button,
+.cancel-button {
+  padding: 0.875rem 2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-button {
+  background: #27ae60;
+  color: white;
+  flex: 1;
+}
+
+.add-button:hover {
+  background: #229954;
+}
+
+.next-button {
+  background: #3498db;
+  color: white;
+  margin-top: 2rem;
+  width: 100%;
+}
+
+.next-button:hover {
+  background: #2980b9;
+}
+
+.cancel-button {
+  background: #95a5a6;
+  color: white;
+}
+
+.cancel-button:hover {
+  background: #7f8c8d;
+}
+
+.navigation-buttons {
+  margin-top: 2rem;
+}

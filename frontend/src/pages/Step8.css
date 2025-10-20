@@ -1,0 +1,376 @@
+.step8-container {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: #7f8c8d;
+}
+
+/* ヘッダー */
+.dashboard-header {
+  background: white;
+  padding: 1.5rem 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.level-display h1 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+}
+
+.user-level {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.level-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  color: white;
+}
+
+.level-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.level-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+}
+
+.xp-bar-container {
+  flex: 1;
+  min-width: 300px;
+}
+
+.xp-bar {
+  height: 30px;
+  background: #e9ecef;
+  border-radius: 15px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+  transition: width 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+}
+
+.xp-text {
+  text-align: center;
+  margin-top: 0.5rem;
+  font-weight: 600;
+  color: #495057;
+}
+
+.edit-jobcrafting-btn {
+  padding: 1rem 2rem;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-jobcrafting-btn:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+/* レイアウト */
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  height: calc(100vh - 250px);
+}
+
+.left-section,
+.right-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+}
+
+.left-section h2,
+.right-section h2 {
+  margin: 0 0 1.5rem 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
+}
+
+/* 空の状態 */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #7f8c8d;
+}
+
+.empty-state p {
+  margin-bottom: 0.5rem;
+}
+
+.hint {
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.create-quest-btn {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.create-quest-btn:hover {
+  background: #229954;
+}
+
+/* クラフティングマップ */
+.work-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.work-item-card {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.work-item-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.work-item-card h3 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.energy-bar {
+  height: 20px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.energy-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+  transition: width 0.3s ease;
+}
+
+.energy-percentage {
+  text-align: right;
+  font-weight: 600;
+  color: #34495e;
+  margin: 0 0 1rem 0;
+}
+
+.reframe {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 1rem 0;
+}
+
+.work-item-tags {
+  margin-top: 1rem;
+}
+
+.tag-group {
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tag-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #34495e;
+}
+
+.tag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.tag.motivation {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.tag.preference {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+/* クエストリスト */
+.quests-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.quest-card {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  transition: all 0.2s;
+}
+
+.quest-card:hover {
+  border-color: #3498db;
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.2);
+}
+
+.quest-content {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.complete-btn {
+  flex-shrink: 0;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.complete-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+}
+
+.complete-btn:active {
+  transform: scale(0.95);
+}
+
+.quest-details {
+  flex: 1;
+}
+
+.quest-details h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.quest-description {
+  color: #6c757d;
+  margin: 0.5rem 0 1rem 0;
+  font-size: 0.95rem;
+}
+
+.quest-badges {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.difficulty-badge,
+.xp-badge,
+.type-badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.difficulty-badge.easy {
+  background: #d4edda;
+  color: #155724;
+}
+
+.difficulty-badge.medium {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.difficulty-badge.hard {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.xp-badge {
+  background: #ffeaa7;
+  color: #d63031;
+}
+
+.type-badge {
+  background: #dfe6e9;
+  color: #2d3436;
+}
+
+/* スクロールバーのスタイリング */
+.left-section::-webkit-scrollbar,
+.right-section::-webkit-scrollbar {
+  width: 8px;
+}
+
+.left-section::-webkit-scrollbar-track,
+.right-section::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.left-section::-webkit-scrollbar-thumb,
+.right-section::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.left-section::-webkit-scrollbar-thumb:hover,
+.right-section::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
