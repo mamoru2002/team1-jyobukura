@@ -4,8 +4,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     volumes:
-      - ./backend:/app
-      - /app/vendor/bundle
+      - ./backend:/rails
+      - bundle_cache:/usr/local/bundle
     ports:
       - "8001:3000"
     depends_on:
@@ -56,4 +56,4 @@ services:
 
 volumes:
   db-data-v2:
-
+  bundle_cache:

@@ -66,3 +66,22 @@ puts "✅ Created #{Action.where(action_type: 'クエスト').count} quests"
 puts "\n🎉 Seed data created successfully!"
 puts "👤 User ID: #{user.id}"
 puts "📧 Email: #{user.email}"
+
+motivation_names = %w[
+  自由を求める 成長する 楽しさを求める 達成感を得る 権力を求める 安心を得る
+  周囲との調和 伝統を守る 影響力を高める 人間性を高める 人を助ける 人を導く
+  とにかく実行する 新たなものを創造する
+]
+preference_names = %w[
+  判断力 よく考える 創造性 知恵 専門性 学習力 忍耐力 集中力 誠実さ
+  活力 寛大さ 社交性 趣味のよさ 楽観性 ユーモア ものごとを整理する
+]
+
+motivation_names.each do |n|
+  MotivationMaster.find_or_create_by!(user: user, name: n)
+end
+preference_names.each do |n|
+  PreferenceMaster.find_or_create_by!(user: user, name: n)
+end
+
+puts "✅ Masters seeded for user=#{user.id}: motivations=#{user.motivation_masters.count}, preferences=#{user.preference_masters.count}"
