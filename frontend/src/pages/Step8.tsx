@@ -75,13 +75,6 @@ const Step8 = () => {
     setXp(newXp);
     setLevel(newLevel);
     saveUserProgress(newXp, newLevel);
-
-    // レベルアップの通知
-    if (newLevel > level) {
-      alert(`🎉 レベルアップ！ レベル ${newLevel} になりました！\n${quest.xp} XP を獲得しました！`);
-    } else {
-      alert(`🎉 クエスト達成！ ${quest.xp} XP を獲得しました！`);
-    }
   };
 
   const handleEditJobcrafting = () => {
@@ -112,7 +105,7 @@ const Step8 = () => {
           </div>
         </div>
         <button onClick={handleEditJobcrafting} className="edit-jobcrafting-btn">
-          ✏️ ジョブクラを修正する
+          ジョブクラを修正する
         </button>
       </div>
 
@@ -123,7 +116,7 @@ const Step8 = () => {
             <h2>ようこそ！</h2>
             <p>ジョブクラフティングを始めて、あなたの仕事を再設計しましょう。</p>
             <button onClick={() => navigate('/step1')} className="start-jobcrafting-btn">
-              🚀 ジョブクラを実行する
+              ジョブクラを実行する
             </button>
           </div>
         </div>
@@ -131,7 +124,7 @@ const Step8 = () => {
         <div className="dashboard-layout">
           {/* 左側 - クラフティングマップ */}
           <div className="left-section">
-            <h2>📊 クラフティングマップ</h2>
+            <h2>クラフティングマップ</h2>
             {workItems.length === 0 ? (
               <div className="empty-state">
                 <p>まだクラフティングマップが作成されていません</p>
@@ -185,7 +178,7 @@ const Step8 = () => {
 
           {/* 右側 - クエストリスト */}
           <div className="right-section">
-            <h2>🎯 クエストリスト</h2>
+            <h2>クエストリスト</h2>
             {quests.length === 0 ? (
               <div className="empty-state">
                 <p>まだクエストが登録されていません</p>
@@ -202,7 +195,7 @@ const Step8 = () => {
                       <div className="quest-details">
                         <h3>{quest.name}</h3>
                         <div className="quest-badges">
-                          <span className="xp-badge">⭐ {quest.xp} XP</span>
+                          <span className="xp-badge">+{quest.xp} XP</span>
                         </div>
                       </div>
                     </div>
