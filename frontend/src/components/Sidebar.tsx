@@ -10,7 +10,8 @@ const Sidebar = () => {
     { path: '/step4', label: 'STEP4 業務クラフティング' },
     { path: '/step5', label: 'STEP5 関係性クラフティング' },
     { path: '/step6', label: 'STEP6 認知クラフティング' },
-    { path: '/step7-1', label: 'STEP7 アクションプラン' },
+    { path: '/step7-1', label: 'STEP7-1 アクションプラン' },
+    { path: '/step7-2', label: 'STEP7-2 クエストボード' },
   ];
 
   const completedSteps: string[] = [];

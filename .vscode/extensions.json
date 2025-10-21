@@ -3,6 +3,7 @@
     "esbenp.prettier-vscode",
     "dbaeumer.vscode-eslint",
     "misogi.ruby-rubocop",
-    "shopify.ruby-lsp"
+    "shopify.ruby-lsp",
+    "ms-vscode.vscode-typescript-next"
   ]
 }

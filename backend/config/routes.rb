@@ -24,7 +24,7 @@ Rails.application.routes.draw do
         end
       end
       resources :action_plans, only: [:show, :create, :update]
-      
+
       resources :motivation_masters
       resources :preference_masters
       resources :people
