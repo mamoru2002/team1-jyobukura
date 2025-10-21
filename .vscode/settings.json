@@ -6,6 +6,10 @@
     "source.fixAll.eslint": "explicit"
   },
 
+  // TypeScript設定
+  "typescript.tsdk": "frontend/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
   // 言語別設定
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -32,14 +36,13 @@
     "editor.formatOnSave": true
   },
   "[ruby]": {
-    "editor.defaultFormatter": "misogi.ruby-rubocop",
-    "editor.formatOnSave": true
+    "editor.defaultFormatter": "shopify.ruby-lsp",
+    "editor.formatOnSave": false
   },
 
-  // Rubocop設定
-  "ruby.rubocop.executePath": "/usr/local/bin/",
-  "ruby.rubocop.onSave": true,
-  "ruby.format": "rubocop",
+  // Ruby LSP設定（Dockerコンテナ内で実行）
+  "ruby.lsp.enabled": true,
+  "ruby.lsp.bundleGemfile": "./backend/Gemfile",
 
   // Prettier設定
   "prettier.requireConfig": true,
@@ -47,5 +50,11 @@
   // ファイル保存時の動作
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
-  "files.trimFinalNewlines": true
+  "files.trimFinalNewlines": true,
+
+  // Cursor用の追加設定
+  "typescript.disableAutomaticTypeAcquisition": false,
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always"
 }

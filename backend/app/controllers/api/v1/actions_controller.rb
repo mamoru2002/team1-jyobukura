@@ -42,17 +42,17 @@ module Api
 
       def complete
         @action.complete!
-        
+
         if @action.destroyed?
           # 単発クエストの場合は削除されている
-          render json: { 
+          render json: {
             message: 'Quest completed and removed',
             xp_gained: action_params_for_complete[:xp_points] || @action.xp_points,
             user: user_json(@action.user)
           }
         else
           # 連続クエストの場合は残っている
-          render json: { 
+          render json: {
             message: 'Quest completed',
             action: action_json(@action),
             xp_gained: @action.xp_points,
@@ -71,7 +71,7 @@ module Api
 
       def action_params
         params.require(:action).permit(
-          :user_id, :name, :description, :due_date, :period_type, 
+          :user_id, :name, :description, :due_date, :period_type,
           :status, :action_type, :xp_points, :difficulty, :quest_type, :work_item_id
         )
       end
@@ -110,4 +110,3 @@ module Api
     end
   end
 end
-

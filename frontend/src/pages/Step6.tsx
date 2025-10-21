@@ -17,7 +17,7 @@ const Step6 = () => {
     'チームの心理的安全性を高める調整役',
   ]);
 
-  const [workItems, setWorkItems] = useState<WorkItem[]>([
+  const [workItems] = useState<WorkItem[]>([
     {
       id: 1,
       name: '定例会議の資料作成',

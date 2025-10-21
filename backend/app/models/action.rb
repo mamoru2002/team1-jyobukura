@@ -15,7 +15,7 @@ class Action < ApplicationRecord
   def complete!
     update(status: '完了')
     user.add_experience(xp_points) if action_type == 'クエスト'
-    
+
     # 単発クエストの場合は削除
     destroy if quest_type == 'one_time'
   end
@@ -31,4 +31,3 @@ class Action < ApplicationRecord
                      end
   end
 end
-
