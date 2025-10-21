@@ -78,20 +78,26 @@ const Step7_2 = () => {
   return (
     <div className="flex-1 p-8">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
+      <header className="mb-8">
+        <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-slate-800">STEP7-2 クエストボード作成</h1>
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-slate-500">7/7</span>
-            <div className="w-32 h-2 bg-slate-200 rounded-full">
-              <div className="w-full h-full bg-purple-500 rounded-full"></div>
-            </div>
+            <span className="text-slate-500">7/7</span>
+            <button className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 hover:bg-slate-300 flex items-center justify-center">
+              ？
+            </button>
           </div>
         </div>
-        <p className="text-slate-600">
-          計画を、実行可能なクエストに分解しましょう。完了すると経験値 (XP) がもらえます。
+        <p className="text-slate-500">
+          計画を、実行可能なクエストに分解しましょう。難易度によって経験値 (XP) が変わります。
         </p>
-      </div>
+        <div className="w-full bg-slate-200 rounded-full h-2 mt-4">
+          <div
+            className="bg-orange-600 h-2 rounded-full progress-bar-fill"
+            style={{ width: '100%' }}
+          ></div>
+        </div>
+      </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Column - Your Plan */}
@@ -176,7 +182,7 @@ const Step7_2 = () => {
 
               <button
                 onClick={handleAddQuest}
-                className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                className="w-full bg-orange-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
               >
                 クエストを追加
               </button>
@@ -191,7 +197,7 @@ const Step7_2 = () => {
                 >
                   <div className="flex items-center space-x-3">
                     <span className="text-sm font-medium text-slate-800">{quest.name}</span>
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                    <span className="text-xs bg-yellow-100 text-red-600 px-2 py-1 rounded font-semibold">
                       +{quest.xp} XP
                     </span>
                   </div>
@@ -209,7 +215,7 @@ const Step7_2 = () => {
           {/* Complete Button */}
           <button
             onClick={handleComplete}
-            className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+            className="w-full bg-orange-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
           >
             完了してクエストボードへ
           </button>

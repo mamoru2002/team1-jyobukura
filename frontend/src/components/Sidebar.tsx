@@ -44,9 +44,9 @@ const Sidebar = () => {
       <div>
         <Link
           to="/step8"
-          className="block bg-green-600 text-white text-center py-3 px-4 rounded-lg font-bold hover:bg-green-700 transition-all"
+          className="block bg-orange-500 text-white text-center py-3 px-4 rounded-lg font-bold hover:bg-orange-600 transition-all"
         >
-          📊 ダッシュボード
+          ダッシュボード
         </Link>
         <div className="mt-6 text-sm text-slate-400">
           <p>山本航暉さん</p>
