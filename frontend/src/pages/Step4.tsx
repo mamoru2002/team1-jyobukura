@@ -64,9 +64,16 @@ const decodeSelectedItem = (rawId: string, fallbackType: SelectionType): Selecte
   }
 };
 
+const getStorageItem = (key: string): string | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  return window.localStorage.getItem(key);
+};
+
 const loadSelectedItems = (): SelectedItem[] => {
-  const motivationIds = parseStringArray(localStorage.getItem(STORAGE_KEY_MOTIVATIONS));
-  const preferenceIds = parseStringArray(localStorage.getItem(STORAGE_KEY_PREFERENCES));
+  const motivationIds = parseStringArray(getStorageItem(STORAGE_KEY_MOTIVATIONS));
+  const preferenceIds = parseStringArray(getStorageItem(STORAGE_KEY_PREFERENCES));
   const results: SelectedItem[] = [];
   const seen = new Set<string>();
 
@@ -97,7 +104,7 @@ const isPlacement = (value: unknown): value is Placement => {
 };
 
 const loadPlacementsFromStorage = (validIds: Set<string>): Placement[] => {
-  const stored = localStorage.getItem(STORAGE_KEY_PLACEMENTS);
+  const stored = getStorageItem(STORAGE_KEY_PLACEMENTS);
   if (!stored) {
     return [];
   }
@@ -121,6 +128,16 @@ const loadPlacementsFromStorage = (validIds: Set<string>): Placement[] => {
   }
 };
 
+const toErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return '不明なエラーが発生しました。';
+};
+
 const Step4 = () => {
   const navigate = useNavigate();
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -130,6 +147,7 @@ const Step4 = () => {
     return resolved;
   });
   const [beforeSketchUrl, setBeforeSketchUrl] = useState<string | null>(null);
+  const [beforeSketchError, setBeforeSketchError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [highlightedPlacementId, setHighlightedPlacementId] = useState<string | null>(null);
@@ -146,6 +164,7 @@ const Step4 = () => {
     let isMounted = true;
 
     const loadSketch = async () => {
+      setBeforeSketchError(null);
       try {
         const remoteUrl = await fetchBeforeSketchDataUrl(userId);
         if (!isMounted) {
@@ -161,6 +180,9 @@ const Step4 = () => {
         }
       } catch (error) {
         console.error('Failed to load before sketch', error);
+        if (isMounted) {
+          setBeforeSketchError(toErrorMessage(error));
+        }
       }
 
       if (!isMounted) {
@@ -170,10 +192,14 @@ const Step4 = () => {
         const fallback = window.localStorage.getItem('beforeSketchDataUrl');
         if (fallback) {
           setBeforeSketchUrl(fallback);
+          setBeforeSketchError((current) =>
+            current ?? 'サーバーからビフォースケッチを取得できなかったため、ローカル保存を表示しています。'
+          );
           return;
         }
       }
       setBeforeSketchUrl(null);
+      setBeforeSketchError((current) => current ?? 'ビフォースケッチが見つかりません。STEP1で保存してください。');
     };
 
     void loadSketch();
@@ -193,8 +219,11 @@ const Step4 = () => {
   }, [itemMap]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
     try {
-      localStorage.setItem(STORAGE_KEY_PLACEMENTS, JSON.stringify(placements));
+      window.localStorage.setItem(STORAGE_KEY_PLACEMENTS, JSON.stringify(placements));
     } catch (error) {
       console.error('Failed to persist placements', error);
     }
@@ -417,6 +446,9 @@ const Step4 = () => {
               </div>
             )}
           </div>
+          {beforeSketchError ? (
+            <p className="text-xs text-red-600 mt-3 text-center">{beforeSketchError}</p>
+          ) : null}
         </section>
 
         <section className="selection-palette flex flex-col space-y-6">

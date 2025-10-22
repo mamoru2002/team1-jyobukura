@@ -18,8 +18,11 @@ const MAX_SELECTIONS_PER_TYPE = 4;
 const toItemId = (type: SelectionType, label: string): string => `${type}:${encodeURIComponent(label)}`;
 
 const fromStorage = (key: string): string[] => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
   try {
-    const stored = localStorage.getItem(key);
+    const stored = window.localStorage.getItem(key);
     if (!stored) {
       return [];
     }
@@ -34,8 +37,11 @@ const fromStorage = (key: string): string[] => {
 };
 
 const saveToStorage = (key: string, values: string[]): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
   try {
-    localStorage.setItem(key, JSON.stringify(values));
+    window.localStorage.setItem(key, JSON.stringify(values));
   } catch (error) {
     console.error('Failed to persist selection', error);
   }
