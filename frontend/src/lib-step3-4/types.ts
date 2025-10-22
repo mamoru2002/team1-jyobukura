@@ -32,4 +32,7 @@ export type BeforeSketchPayload = {
   beforeSketchDataUrl?: string | null;
   before_sketch_url?: string | null;
   beforeSketchUrl?: string | null;
+  user?: BeforeSketchPayload | null;
+  data?: BeforeSketchPayload | { attributes?: BeforeSketchPayload | null } | null;
+  attributes?: BeforeSketchPayload | null;
 };

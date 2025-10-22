@@ -1,4 +1,5 @@
 const ACTIVE_USER_STORAGE_KEY = 'activeUserId';
+const LEGACY_USER_STORAGE_KEY = 'userId';
 const FALLBACK_USER_ID = 1;
 
 const parseUserId = (raw: string | null | undefined): number | null => {
@@ -17,9 +18,13 @@ const parseUserId = (raw: string | null | undefined): number | null => {
 };
 
 export const resolveActiveUserId = (): number => {
-  const storedValue = typeof window !== 'undefined'
-    ? window.localStorage.getItem(ACTIVE_USER_STORAGE_KEY)
-    : null;
+  let storedValue: string | null = null;
+  if (typeof window !== 'undefined') {
+    storedValue = window.localStorage.getItem(ACTIVE_USER_STORAGE_KEY);
+    if (!storedValue) {
+      storedValue = window.localStorage.getItem(LEGACY_USER_STORAGE_KEY);
+    }
+  }
   const envValue = import.meta.env.VITE_DEFAULT_USER_ID;
 
   const resolved = parseUserId(storedValue) ?? parseUserId(envValue);

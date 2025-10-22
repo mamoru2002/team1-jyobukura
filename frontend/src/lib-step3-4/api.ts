@@ -112,16 +112,63 @@ const coerceDataUrl = (value: unknown): string | null => {
   return trimmed.length > 0 ? trimmed : null;
 };
 
+const extractDataUrlFromRecord = (
+  record: Record<string, unknown> | null | undefined
+): string | null => {
+  if (!record) {
+    return null;
+  }
+  const typed = record as BeforeSketchPayload & Record<string, unknown>;
+  return (
+    coerceDataUrl(typed.before_sketch_data_url) ??
+    coerceDataUrl(typed.beforeSketchDataUrl) ??
+    coerceDataUrl(typed.before_sketch_url) ??
+    coerceDataUrl(typed.beforeSketchUrl) ??
+    null
+  );
+};
+
+const extractDataUrl = (payload: Record<string, unknown>): string | null => {
+  const direct = extractDataUrlFromRecord(payload);
+  if (direct) {
+    return direct;
+  }
+
+  const nestedSources: Array<unknown> = [];
+  if (payload.user && typeof payload.user === 'object') {
+    nestedSources.push(payload.user);
+  }
+  if (payload.data && typeof payload.data === 'object') {
+    nestedSources.push(payload.data);
+    const dataRecord = payload.data as Record<string, unknown>;
+    if (dataRecord.attributes && typeof dataRecord.attributes === 'object') {
+      nestedSources.push(dataRecord.attributes);
+    }
+  }
+
+  for (const source of nestedSources) {
+    if (source && typeof source === 'object') {
+      const value = extractDataUrlFromRecord(source as Record<string, unknown>);
+      if (value) {
+        return value;
+      }
+    }
+  }
+
+  return null;
+};
+
 export const fetchBeforeSketchDataUrl = async (userId: number): Promise<string | null> => {
   const payload = await request<BeforeSketchPayload & Record<string, unknown>>(
     `/api/v1/users/${encodeURIComponent(userId)}`
   );
 
-  return (
-    coerceDataUrl(payload.before_sketch_data_url) ??
-    coerceDataUrl(payload.beforeSketchDataUrl) ??
-    coerceDataUrl(payload.before_sketch_url) ??
-    coerceDataUrl(payload.beforeSketchUrl) ??
-    null
-  );
+  if (payload && typeof payload === 'object') {
+    const dataUrl = extractDataUrl(payload as Record<string, unknown>);
+    if (dataUrl) {
+      return dataUrl;
+    }
+  }
+
+  return null;
 };
