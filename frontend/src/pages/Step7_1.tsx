@@ -11,6 +11,15 @@ const Step7_1 = () => {
 
   useEffect(() => {
     loadWorkItems();
+
+    // 保存されたデータを読み込み
+    const savedPlan = localStorage.getItem('step7-1-plan');
+    if (savedPlan) {
+      const planData = JSON.parse(savedPlan);
+      setNextActions(planData.nextActions || '');
+      setCollaborators(planData.collaborators || '');
+      setObstacles(planData.obstacles || '');
+    }
   }, []);
 
   const loadWorkItems = async () => {
@@ -25,16 +34,34 @@ const Step7_1 = () => {
     }
   };
 
-  const handleCreateQuest = () => {
-    // 入力内容をlocalStorageに保存
+  const savePlanData = () => {
     const planData = {
       nextActions,
       collaborators,
       obstacles,
     };
     localStorage.setItem('step7-1-plan', JSON.stringify(planData));
+  };
 
-    // STEP7-2に移動
+  const handleInputChange = (field: string, value: string) => {
+    if (field === 'nextActions') setNextActions(value);
+    if (field === 'collaborators') setCollaborators(value);
+    if (field === 'obstacles') setObstacles(value);
+
+    // リアルタイムで保存
+    setTimeout(() => {
+      const planData = {
+        nextActions: field === 'nextActions' ? value : nextActions,
+        collaborators: field === 'collaborators' ? value : collaborators,
+        obstacles: field === 'obstacles' ? value : obstacles,
+      };
+      localStorage.setItem('step7-1-plan', JSON.stringify(planData));
+    }, 0);
+  };
+
+  const handleCreateQuest = () => {
+    // 最終保存
+    savePlanData();
     window.location.href = '/step7-2';
   };
 
@@ -145,7 +172,7 @@ const Step7_1 = () => {
             </h3>
             <textarea
               value={nextActions}
-              onChange={(e) => setNextActions(e.target.value)}
+              onChange={(e) => handleInputChange('nextActions', e.target.value)}
               placeholder="(例) 部長に壁打ちを依頼する"
               className="w-full h-24 p-3 border border-slate-300 rounded-lg resize-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             />
@@ -157,7 +184,7 @@ const Step7_1 = () => {
             </h3>
             <textarea
               value={collaborators}
-              onChange={(e) => setCollaborators(e.target.value)}
+              onChange={(e) => handleInputChange('collaborators', e.target.value)}
               placeholder="(例) ○○さん、△△さん"
               className="w-full h-20 p-3 border border-slate-300 rounded-lg resize-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             />
@@ -169,7 +196,7 @@ const Step7_1 = () => {
             </h3>
             <textarea
               value={obstacles}
-              onChange={(e) => setObstacles(e.target.value)}
+              onChange={(e) => handleInputChange('obstacles', e.target.value)}
               placeholder="(例) 障壁:時間がない→対策: カレンダーでタスクの時間をブロックする"
               className="w-full h-24 p-3 border border-slate-300 rounded-lg resize-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             />

@@ -10,12 +10,19 @@ interface LocalQuest {
   xp: number;
 }
 
+interface WorkCard {
+  id: number;
+  content: string;
+  energyPercentage: number;
+}
+
 const Step8 = () => {
   const navigate = useNavigate();
   const userId = 1; // 仮のユーザーID
   const [user, setUser] = useState<User | null>(null);
   const [workItems, setWorkItems] = useState<WorkItem[]>([]);
   const [quests, setQuests] = useState<LocalQuest[]>([]);
+  const [step1Cards, setStep1Cards] = useState<WorkCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [level, setLevel] = useState(1);
   const [xp, setXp] = useState(0);
@@ -24,6 +31,7 @@ const Step8 = () => {
     loadDashboard();
     loadLocalQuests();
     loadUserProgress();
+    loadStep1Cards();
   }, []);
 
   const loadDashboard = async () => {
@@ -45,16 +53,18 @@ const Step8 = () => {
     }
   };
 
+  const loadStep1Cards = () => {
+    const savedCards = localStorage.getItem('step1-cards');
+    if (savedCards) {
+      setStep1Cards(JSON.parse(savedCards));
+    }
+  };
+
   const loadUserProgress = () => {
     const savedLevel = localStorage.getItem('user-level');
     const savedXp = localStorage.getItem('user-xp');
     if (savedLevel) setLevel(parseInt(savedLevel));
     if (savedXp) setXp(parseInt(savedXp));
-  };
-
-  const saveUserProgress = (newXp: number, newLevel: number) => {
-    localStorage.setItem('user-xp', newXp.toString());
-    localStorage.setItem('user-level', newLevel.toString());
   };
 
   const handleCompleteQuest = (questId: number) => {
@@ -90,7 +100,6 @@ const Step8 = () => {
       {/* ヘッダー - レベル情報 */}
       <div className="dashboard-header">
         <div className="level-display">
-          <h1>ダッシュボード</h1>
           <div className="user-level">
             <div className="level-info">
               <span className="level-label">レベル</span>
@@ -110,7 +119,7 @@ const Step8 = () => {
       </div>
 
       {/* 空状態 - クラフトマップもクエストもない場合 */}
-      {workItems.length === 0 && quests.length === 0 ? (
+      {step1Cards.length === 0 && quests.length === 0 ? (
         <div className="empty-dashboard">
           <div className="empty-content">
             <h2>ようこそ！</h2>
@@ -125,7 +134,7 @@ const Step8 = () => {
           {/* 左側 - クラフティングマップ */}
           <div className="left-section">
             <h2>クラフティングマップ</h2>
-            {workItems.length === 0 ? (
+            {step1Cards.length === 0 ? (
               <div className="empty-state">
                 <p>まだクラフティングマップが作成されていません</p>
                 <button onClick={() => navigate('/step1')} className="start-btn">
@@ -134,42 +143,16 @@ const Step8 = () => {
               </div>
             ) : (
               <div className="work-items-grid">
-                {workItems.map((item) => (
+                {step1Cards.map((item) => (
                   <div key={item.id} className="work-item-card">
-                    <h3>{item.name}</h3>
+                    <h3>{item.content || '（未入力）'}</h3>
                     <div className="energy-bar">
                       <div
                         className="energy-fill"
-                        style={{ width: `${item.energy_percentage}%` }}
+                        style={{ width: `${item.energyPercentage}%` }}
                       ></div>
                     </div>
-                    <p className="energy-percentage">{item.energy_percentage}%</p>
-
-                    {item.reframe && <p className="reframe">{item.reframe}</p>}
-
-                    <div className="work-item-tags">
-                      {item.motivations.length > 0 && (
-                        <div className="tag-group">
-                          <span className="tag-label">動機:</span>
-                          {item.motivations.map((m) => (
-                            <span key={m.id} className="tag motivation">
-                              {m.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {item.preferences.length > 0 && (
-                        <div className="tag-group">
-                          <span className="tag-label">嗜好:</span>
-                          {item.preferences.map((p) => (
-                            <span key={p.id} className="tag preference">
-                              {p.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <p className="energy-percentage">{item.energyPercentage}%</p>
                   </div>
                 ))}
               </div>
