@@ -7,9 +7,9 @@ module Api
         user_id = params[:user_id]
         if user_id
           work_items = WorkItem.where(user_id: user_id).includes(
-            :motivation_masters, 
-            :preference_masters, 
-            :people, 
+            :motivation_masters,
+            :preference_masters,
+            :people,
             :role_categories
           )
           render json: work_items.map { |wi| work_item_json(wi) }
@@ -75,4 +75,3 @@ module Api
     end
   end
 end
-

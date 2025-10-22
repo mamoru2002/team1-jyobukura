@@ -1,75 +1,209 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  createMotivationMaster,
+  createPreferenceMaster,
+  fetchMotivationMasters,
+  fetchPreferenceMasters,
+} from '../lib-step3-4/api';
+import type { MotivationMaster, PreferenceMaster, SelectionType } from '../lib-step3-4/types';
+
+const USER_ID = 1;
+const MAX_LABEL_LENGTH = 60;
+const STORAGE_KEY_MOTIVATIONS = 'step3SelectedMotivations';
+const STORAGE_KEY_PREFERENCES = 'step3SelectedPreferences';
+
+const toItemId = (type: SelectionType, label: string): string => `${type}:${encodeURIComponent(label)}`;
+
+const fromStorage = (key: string): string[] => {
+  try {
+    const stored = localStorage.getItem(key);
+    if (!stored) {
+      return [];
+    }
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : [];
+  } catch (error) {
+    console.error('Failed to parse selection storage', error);
+    return [];
+  }
+};
+
+const saveToStorage = (key: string, values: string[]): void => {
+  try {
+    localStorage.setItem(key, JSON.stringify(values));
+  } catch (error) {
+    console.error('Failed to persist selection', error);
+  }
+};
+
+const normalizeSelection = (values: string[], type: SelectionType): string[] => {
+  const normalized = new Set<string>();
+  values.forEach((value) => {
+    if (typeof value !== 'string') {
+      return;
+    }
+    if (value.startsWith(`${type}:`)) {
+      normalized.add(value);
+      return;
+    }
+    const trimmed = value.trim();
+    if (trimmed) {
+      normalized.add(toItemId(type, trimmed));
+    }
+  });
+  return Array.from(normalized);
+};
+
+const toErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return '不明なエラーが発生しました。';
+};
 
 const Step3 = () => {
   const navigate = useNavigate();
-  const [selectedMotivations, setSelectedMotivations] = useState<string[]>([
-    '成長する',
-    '新たなものを創造する',
-  ]);
-  const [selectedPreferences, setSelectedPreferences] = useState<string[]>(['創造性', 'ユーモア']);
-  const [customMotivation, setCustomMotivation] = useState('');
-  const [customPreference, setCustomPreference] = useState('');
+  const [beforeSketchUrl, setBeforeSketchUrl] = useState<string | null>(null);
+  const [motivations, setMotivations] = useState<MotivationMaster[]>([]);
+  const [preferences, setPreferences] = useState<PreferenceMaster[]>([]);
+  const [selectedMotivationIds, setSelectedMotivationIds] = useState<string[]>(() =>
+    normalizeSelection(fromStorage(STORAGE_KEY_MOTIVATIONS), 'motivation')
+  );
+  const [selectedPreferenceIds, setSelectedPreferenceIds] = useState<string[]>(() =>
+    normalizeSelection(fromStorage(STORAGE_KEY_PREFERENCES), 'preference')
+  );
+  const [motivationInput, setMotivationInput] = useState('');
+  const [preferenceInput, setPreferenceInput] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [motivationError, setMotivationError] = useState<string | null>(null);
+  const [preferenceError, setPreferenceError] = useState<string | null>(null);
+  const [creatingType, setCreatingType] = useState<SelectionType | null>(null);
 
-  const motivations = [
-    '自由を求める',
-    '成長する',
-    '楽しさを求める',
-    '達成感を得る',
-    '安心を得る',
-    '人を助ける',
-    '新たなものを創造する',
-  ];
-  const preferences = [
-    '判断力',
-    'よく考える',
-    '創造性',
-    '専門性',
-    '忍耐力',
-    'ユーモア',
-    'ものごとを整理する',
-  ];
+  useEffect(() => {
+    const url = localStorage.getItem('beforeSketchDataUrl');
+    if (url) {
+      setBeforeSketchUrl(url);
+    }
+  }, []);
 
-  const beforeSketchItems = [
-    { content: '定例会議の資料作成', type: 'タスク' },
-    { content: 'クライアントAとの打ち合わせ', type: 'タスク' },
-    { content: '〇〇部長 (週1で報告)', type: '人物' },
-    { content: 'チームメンバーとの雑談', type: '人物' },
-    { content: 'Excelスキル', type: 'スキル' },
-  ];
+  useEffect(() => {
+    saveToStorage(STORAGE_KEY_MOTIVATIONS, selectedMotivationIds);
+  }, [selectedMotivationIds]);
 
-  const toggleMotivation = (item: string) => {
-    setSelectedMotivations((prev) =>
-      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
-    );
-  };
+  useEffect(() => {
+    saveToStorage(STORAGE_KEY_PREFERENCES, selectedPreferenceIds);
+  }, [selectedPreferenceIds]);
 
-  const togglePreference = (item: string) => {
-    setSelectedPreferences((prev) =>
-      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
-    );
-  };
+  const loadMasters = useCallback(
+    async (showLoader = true) => {
+      if (showLoader) {
+        setLoading(true);
+      }
+      setFetchError(null);
+      try {
+        const [motivationList, preferenceList] = await Promise.all([
+          fetchMotivationMasters(USER_ID),
+          fetchPreferenceMasters(USER_ID),
+        ]);
+        setMotivations(motivationList);
+        setPreferences(preferenceList);
+      } catch (error) {
+        setFetchError(toErrorMessage(error));
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
-  const addCustomMotivation = () => {
-    if (customMotivation.trim()) {
-      setSelectedMotivations([...selectedMotivations, customMotivation]);
-      setCustomMotivation('');
+  useEffect(() => {
+    void loadMasters();
+  }, [loadMasters]);
+
+  const motivationNames = useMemo(() => motivations.map((item) => item.name), [motivations]);
+  const preferenceNames = useMemo(() => preferences.map((item) => item.name), [preferences]);
+
+  const toggleSelection = (type: SelectionType, label: string) => {
+    const trimmed = label.trim();
+    if (!trimmed) {
+      return;
+    }
+    const itemId = toItemId(type, trimmed);
+    if (type === 'motivation') {
+      setSelectedMotivationIds((prev) =>
+        prev.includes(itemId) ? prev.filter((value) => value !== itemId) : [...prev, itemId]
+      );
+    } else {
+      setSelectedPreferenceIds((prev) =>
+        prev.includes(itemId) ? prev.filter((value) => value !== itemId) : [...prev, itemId]
+      );
     }
   };
 
-  const addCustomPreference = () => {
-    if (customPreference.trim()) {
-      setSelectedPreferences([...selectedPreferences, customPreference]);
-      setCustomPreference('');
+  const handleCreate = async (type: SelectionType) => {
+    const value = (type === 'motivation' ? motivationInput : preferenceInput).trim();
+    if (!value) {
+      if (type === 'motivation') {
+        setMotivationError('内容を入力してください。');
+      } else {
+        setPreferenceError('内容を入力してください。');
+      }
+      return;
+    }
+    if (value.length > MAX_LABEL_LENGTH) {
+      const message = `最大${MAX_LABEL_LENGTH}文字までです。`;
+      if (type === 'motivation') {
+        setMotivationError(message);
+      } else {
+        setPreferenceError(message);
+      }
+      return;
+    }
+
+    setCreatingType(type);
+    setMotivationError(null);
+    setPreferenceError(null);
+    try {
+      if (type === 'motivation') {
+        const created = await createMotivationMaster(USER_ID, value);
+        setMotivationInput('');
+        const createdId = toItemId('motivation', created.name.trim());
+        setSelectedMotivationIds((prev) =>
+          prev.includes(createdId) ? prev : [...prev, createdId]
+        );
+      } else {
+        const created = await createPreferenceMaster(USER_ID, value);
+        setPreferenceInput('');
+        const createdId = toItemId('preference', created.name.trim());
+        setSelectedPreferenceIds((prev) =>
+          prev.includes(createdId) ? prev : [...prev, createdId]
+        );
+      }
+      await loadMasters(false);
+    } catch (error) {
+      const message = toErrorMessage(error);
+      if (type === 'motivation') {
+        setMotivationError(message);
+      } else {
+        setPreferenceError(message);
+      }
+    } finally {
+      setCreatingType(null);
     }
   };
 
-  const handleNext = () => navigate('/step4');
-  const handleBack = () => navigate('/step2');
+  const isNextEnabled = selectedMotivationIds.length > 0 || selectedPreferenceIds.length > 0;
 
   return (
-    <main className="flex-1 p-12 flex flex-col">
-      <header className="mb-8">
+    <main className="step-page step3 flex-1 p-12 flex flex-col">
+      <header className="step-header mb-8">
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-3xl font-bold">STEP3 動機と嗜好のピックアップ</h2>
           <div className="flex items-center space-x-4">
@@ -83,128 +217,171 @@ const Step3 = () => {
           あなたの仕事の原動力となる価値観を選んでみましょう。それぞれ3〜4個が目安です。
         </p>
         <div className="w-full bg-slate-200 rounded-full h-2 mt-4">
-          <div
-            className="bg-orange-600 h-2 rounded-full progress-bar-fill"
-            style={{ width: '42.6%' }}
-          ></div>
+          <div className="bg-orange-600 h-2 rounded-full progress-bar-fill" style={{ width: '42.6%' }}></div>
         </div>
       </header>
 
-      <div className="flex-1 grid grid-cols-2 gap-8 fade-in">
-        <div className="flex flex-col space-y-8 overflow-y-auto pr-4">
-          <div>
-            <h3 className="text-xl font-bold mb-1">動機</h3>
+      <div className="flex-1 grid grid-cols-2 gap-8 fade-in step-body">
+        <section className="sketch-preview bg-slate-100 rounded-2xl p-6 flex flex-col">
+          <h3 className="font-bold mb-4 text-slate-700">あなたのビフォースケッチ（STEP1）</h3>
+          <div className="sketch-preview-frame flex-1 bg-white rounded-xl border border-slate-200 overflow-hidden relative flex items-center justify-center">
+            {beforeSketchUrl ? (
+              <img src={beforeSketchUrl} alt="Before sketch" className="max-w-full max-h-full object-contain" />
+            ) : (
+              <p className="text-slate-400 text-sm text-center px-4">
+                ビフォースケッチが見つかりません。STEP1で保存するとここに表示されます。
+              </p>
+            )}
+          </div>
+        </section>
+
+        <section className="selection-area flex flex-col space-y-8 overflow-y-auto pr-1">
+          {fetchError ? (
+            <div className="selection-error text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">
+              {fetchError}
+            </div>
+          ) : null}
+          <article className="selection-panel bg-white rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-bold">動機</h3>
+              <span className="selection-count text-sm text-slate-500">
+                {selectedMotivationIds.length}件選択中
+              </span>
+            </div>
             <p className="text-sm text-slate-500 mb-4">
               仕事を通じて、どのような価値観を達成したいですか？
             </p>
-            <div className="flex flex-wrap gap-3">
-              {motivations.map((item) => (
-                <span
-                  key={item}
-                  onClick={() => toggleMotivation(item)}
-                  className={`py-2 px-4 rounded-full cursor-pointer transition-all ${
-                    selectedMotivations.includes(item)
-                      ? 'bg-orange-600 text-white'
-                      : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                  }`}
-                >
-                  {item}
-                </span>
-              ))}
+            <div className="selection-options flex flex-wrap gap-3">
+              {loading && motivationNames.length === 0 ? (
+                <span className="text-sm text-slate-400">読み込み中...</span>
+              ) : null}
+              {motivationNames.map((name) => {
+                const trimmed = name.trim();
+                const itemId = toItemId('motivation', trimmed);
+                const isSelected = selectedMotivationIds.includes(itemId);
+                return (
+                  <button
+                    type="button"
+                    key={itemId}
+                    onClick={() => toggleSelection('motivation', trimmed)}
+                    className={`selection-option py-2 px-4 rounded-full border transition ${
+                      isSelected
+                        ? 'bg-orange-600 text-white border-orange-600 shadow-sm'
+                        : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                    }`}
+                  >
+                    {trimmed}
+                  </button>
+                );
+              })}
             </div>
-            <div className="mt-4 flex gap-2">
+            <div className="selection-form mt-4 flex gap-2">
               <input
                 type="text"
-                value={customMotivation}
-                onChange={(e) => setCustomMotivation(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addCustomMotivation()}
+                value={motivationInput}
+                onChange={(event) => setMotivationInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    void handleCreate('motivation');
+                  }
+                }}
                 placeholder="カスタムで動機を追加..."
-                className="flex-1 p-2 border border-slate-300 rounded-lg focus:outline-none transition-all"
+                maxLength={MAX_LABEL_LENGTH}
+                className="flex-1 p-3 border border-slate-300 rounded-lg focus:outline-none"
               />
               <button
-                onClick={addCustomMotivation}
-                className="px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                type="button"
+                onClick={() => void handleCreate('motivation')}
+                disabled={creatingType === 'motivation'}
+                className="px-5 bg-orange-600 text-white rounded-lg font-semibold disabled:opacity-60 disabled:cursor-not-allowed hover:bg-orange-700"
               >
                 追加
               </button>
             </div>
-          </div>
+            {motivationError ? (
+              <p className="text-sm text-red-600 mt-2">{motivationError}</p>
+            ) : null}
+          </article>
 
-          <div>
-            <h3 className="text-xl font-bold mb-1">嗜好</h3>
+          <article className="selection-panel bg-white rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-bold">嗜好</h3>
+              <span className="selection-count text-sm text-slate-500">
+                {selectedPreferenceIds.length}件選択中
+              </span>
+            </div>
             <p className="text-sm text-slate-500 mb-4">
               仕事を通じて、どのような能力やスキルを発揮したいですか？
             </p>
-            <div className="flex flex-wrap gap-3">
-              {preferences.map((item) => (
-                <span
-                  key={item}
-                  onClick={() => togglePreference(item)}
-                  className={`py-2 px-4 rounded-full cursor-pointer transition-all ${
-                    selectedPreferences.includes(item)
-                      ? 'bg-amber-600 text-white'
-                      : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                  }`}
-                >
-                  {item}
-                </span>
-              ))}
+            <div className="selection-options flex flex-wrap gap-3">
+              {loading && preferenceNames.length === 0 ? (
+                <span className="text-sm text-slate-400">読み込み中...</span>
+              ) : null}
+              {preferenceNames.map((name) => {
+                const trimmed = name.trim();
+                const itemId = toItemId('preference', trimmed);
+                const isSelected = selectedPreferenceIds.includes(itemId);
+                return (
+                  <button
+                    type="button"
+                    key={itemId}
+                    onClick={() => toggleSelection('preference', trimmed)}
+                    className={`selection-option py-2 px-4 rounded-full border transition ${
+                      isSelected
+                        ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                        : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                    }`}
+                  >
+                    {trimmed}
+                  </button>
+                );
+              })}
             </div>
-            <div className="mt-4 flex gap-2">
+            <div className="selection-form mt-4 flex gap-2">
               <input
                 type="text"
-                value={customPreference}
-                onChange={(e) => setCustomPreference(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addCustomPreference()}
+                value={preferenceInput}
+                onChange={(event) => setPreferenceInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    void handleCreate('preference');
+                  }
+                }}
                 placeholder="カスタムで嗜好を追加..."
-                className="flex-1 p-2 border border-slate-300 rounded-lg focus:outline-none transition-all"
+                maxLength={MAX_LABEL_LENGTH}
+                className="flex-1 p-3 border border-slate-300 rounded-lg focus:outline-none"
               />
               <button
-                onClick={addCustomPreference}
-                className="px-4 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
+                type="button"
+                onClick={() => void handleCreate('preference')}
+                disabled={creatingType === 'preference'}
+                className="px-5 bg-amber-500 text-white rounded-lg font-semibold disabled:opacity-60 disabled:cursor-not-allowed hover:bg-amber-600"
               >
                 追加
               </button>
             </div>
-          </div>
-        </div>
-
-        <div className="bg-slate-100 rounded-2xl p-6 flex flex-col">
-          <h3 className="font-bold mb-4 text-slate-700">あなたのビフォースケッチ（STEP1）</h3>
-          <div className="flex-1 grid grid-cols-3 grid-rows-2 gap-4">
-            {beforeSketchItems.map((item, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-lg p-3 shadow-sm flex flex-col justify-between"
-              >
-                <p className="text-sm">{item.content}</p>
-                <div
-                  className={`text-right text-xs ${
-                    item.type === 'タスク'
-                      ? 'text-slate-400'
-                      : item.type === '人物'
-                        ? 'text-teal-500'
-                        : 'text-amber-500'
-                  }`}
-                >
-                  {item.type}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+            {preferenceError ? (
+              <p className="text-sm text-red-600 mt-2">{preferenceError}</p>
+            ) : null}
+          </article>
+        </section>
       </div>
 
       <footer className="mt-8 flex justify-between">
         <button
-          onClick={handleBack}
+          type="button"
+          onClick={() => navigate('/step2')}
           className="bg-slate-200 text-slate-700 font-bold py-3 px-8 rounded-lg hover:bg-slate-300 transition-all"
         >
           前に戻る
         </button>
         <button
-          onClick={handleNext}
-          className="bg-orange-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-orange-700 transition-all"
+          type="button"
+          onClick={() => navigate('/step4')}
+          disabled={!isNextEnabled}
+          className="bg-orange-600 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-orange-700 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
         >
           次へ進む
         </button>

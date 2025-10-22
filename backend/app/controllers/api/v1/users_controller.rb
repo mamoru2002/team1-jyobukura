@@ -29,15 +29,15 @@ module Api
 
       def dashboard
         work_items = @user.work_items.includes(
-          :motivation_masters, 
-          :preference_masters, 
-          :people, 
+          :motivation_masters,
+          :preference_masters,
+          :people,
           :role_categories
         )
-        
+
         actions = @user.actions.where.not(status: '取下げ').order(created_at: :desc)
         action_plan = @user.action_plan
-        
+
         render json: {
           user: user_json(@user),
           work_items: work_items.map { |wi| work_item_json(wi) },
@@ -115,4 +115,3 @@ module Api
     end
   end
 end
-

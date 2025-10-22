@@ -1,201 +1,224 @@
 import { useState, useEffect } from 'react';
-import { createAction, getActions, updateAction, deleteAction } from '../services/api';
-import type { Action } from '../types';
-import './Step7.css';
+
+interface Quest {
+  id: number;
+  name: string;
+  xp: number;
+}
+
+interface PlanData {
+  nextActions: string;
+  collaborators: string;
+  obstacles: string;
+}
 
 const Step7_2 = () => {
-  const userId = 1; // 仮のユーザーID
-  const [quests, setQuests] = useState<Action[]>([]);
-  const [questName, setQuestName] = useState('');
-  const [description, setDescription] = useState('');
-  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
-  const [questType, setQuestType] = useState<'one_time' | 'recurring'>('one_time');
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [newQuest, setNewQuest] = useState('');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<'easy' | 'normal' | 'hard'>('normal');
+  const [quests, setQuests] = useState<Quest[]>([
+    { id: 1, name: '部長に壁打ちを依頼する', xp: 50 },
+    { id: 2, name: '朝の15分、資料フォーマットを学習する', xp: 20 },
+  ]);
+  const [planData, setPlanData] = useState<PlanData | null>(null);
 
-  useEffect(() => {
-    loadQuests();
-  }, []);
-
-  const loadQuests = async () => {
-    try {
-      const data = await getActions(userId);
-      // クエストのみをフィルタリング
-      const questsOnly = data.filter((action) => action.action_type === 'クエスト');
-      setQuests(questsOnly);
-    } catch (error) {
-      console.error('クエストの読み込みに失敗しました:', error);
-    }
-  };
-
-  const getXpFromDifficulty = (diff: string): number => {
-    switch (diff) {
+  // 難易度に応じたXPの自動割り振り
+  const getXpByDifficulty = (difficulty: 'easy' | 'normal' | 'hard'): number => {
+    switch (difficulty) {
       case 'easy':
         return 10;
-      case 'medium':
+      case 'normal':
         return 30;
       case 'hard':
         return 50;
       default:
-        return 0;
+        return 30;
     }
   };
 
-  const handleAddQuest = async () => {
-    if (!questName.trim()) return;
+  useEffect(() => {
+    // STEP7-1から保存されたデータを読み込み
+    const savedPlan = localStorage.getItem('step7-1-plan');
+    if (savedPlan) {
+      setPlanData(JSON.parse(savedPlan));
+    }
 
-    const newQuest = {
-      user_id: userId,
-      name: questName,
-      description,
-      action_type: 'クエスト' as const,
-      difficulty,
-      quest_type: questType,
-      xp_points: getXpFromDifficulty(difficulty),
-      status: '未着手' as const,
-    };
+    // 保存されているクエストを読み込み
+    const savedQuests = localStorage.getItem('step7-2-quests');
+    if (savedQuests) {
+      setQuests(JSON.parse(savedQuests));
+    }
+  }, []);
 
-    try {
-      if (editingId) {
-        await updateAction(editingId, newQuest);
-        setEditingId(null);
-      } else {
-        await createAction(newQuest);
-      }
-      await loadQuests();
-      resetForm();
-    } catch (error) {
-      console.error('クエストの保存に失敗しました:', error);
+  // クエストが変更されるたびにlocalStorageに保存
+  useEffect(() => {
+    localStorage.setItem('step7-2-quests', JSON.stringify(quests));
+  }, [quests]);
+
+  const handleAddQuest = () => {
+    if (newQuest.trim()) {
+      const quest: Quest = {
+        id: Date.now(),
+        name: newQuest,
+        xp: getXpByDifficulty(selectedDifficulty),
+      };
+      setQuests([...quests, quest]);
+      setNewQuest('');
+      setSelectedDifficulty('normal'); // リセット
     }
   };
 
-  const handleEdit = (quest: Action) => {
-    setEditingId(quest.id);
-    setQuestName(quest.name);
-    setDescription(quest.description || '');
-    setDifficulty(quest.difficulty || 'easy');
-    setQuestType(quest.quest_type || 'one_time');
+  const handleDeleteQuest = (id: number) => {
+    setQuests(quests.filter((quest) => quest.id !== id));
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm('このクエストを削除しますか？')) {
-      try {
-        await deleteAction(id);
-        await loadQuests();
-      } catch (error) {
-        console.error('クエストの削除に失敗しました:', error);
-      }
-    }
-  };
-
-  const resetForm = () => {
-    setQuestName('');
-    setDescription('');
-    setDifficulty('easy');
-    setQuestType('one_time');
-    setEditingId(null);
+  const handleComplete = () => {
+    window.location.href = '/step8';
   };
 
   return (
-    <div className="step7-container">
-      <h1>STEP 7-2: クエスト管理</h1>
+    <div className="flex-1 p-8">
+      {/* Header */}
+      <header className="mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-slate-800">STEP7-2 クエストボード作成</h1>
+          <div className="flex items-center space-x-2">
+            <span className="text-slate-500">7/7</span>
+            <button className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 hover:bg-slate-300 flex items-center justify-center">
+              ？
+            </button>
+          </div>
+        </div>
+        <p className="text-slate-500">
+          計画を、実行可能なクエストに分解しましょう。難易度によって経験値 (XP) が変わります。
+        </p>
+        <div className="w-full bg-slate-200 rounded-full h-2 mt-4">
+          <div
+            className="bg-orange-600 h-2 rounded-full progress-bar-fill"
+            style={{ width: '100%' }}
+          ></div>
+        </div>
+      </header>
 
-      <div className="step7-layout">
-        <div className="left-panel">
-          <h2>登録済みクエスト</h2>
-          {quests.length === 0 ? (
-            <p className="empty-message">まだクエストが登録されていません</p>
-          ) : (
-            <ul className="quests-list">
-              {quests.map((quest) => (
-                <li key={quest.id} className="quest-item">
-                  <div className="quest-header">
-                    <h3>{quest.name}</h3>
-                    <span className={`difficulty-badge ${quest.difficulty}`}>
-                      {quest.difficulty === 'easy' && '🟢 簡単'}
-                      {quest.difficulty === 'medium' && '🟡 普通'}
-                      {quest.difficulty === 'hard' && '🔴 難しい'}
-                    </span>
-                  </div>
-                  {quest.description && <p className="quest-description">{quest.description}</p>}
-                  <div className="quest-meta">
-                    <span className="xp-badge">⭐ {quest.xp_points} XP</span>
-                    <span className="type-badge">
-                      {quest.quest_type === 'one_time' ? '📌 単発' : '🔄 連続'}
-                    </span>
-                  </div>
-                  <div className="quest-actions">
-                    <button onClick={() => handleEdit(quest)} className="edit-btn">
-                      編集
-                    </button>
-                    <button onClick={() => handleDelete(quest.id)} className="delete-btn">
-                      削除
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Column - Your Plan */}
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">あなたのプラン</h2>
+
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-slate-700 mb-2">次の1週間/1ヶ月でやること</h3>
+                <p className="text-sm text-slate-600">
+                  {planData?.nextActions || 'まだ入力されていません'}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-slate-700 mb-2">協力者</h3>
+                <p className="text-sm text-slate-600">
+                  {planData?.collaborators || 'まだ入力されていません'}
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-slate-700 mb-2">障壁と対策</h3>
+                <p className="text-sm text-slate-600">
+                  {planData?.obstacles || 'まだ入力されていません'}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="right-panel">
-          <h2>{editingId ? 'クエストを編集' : 'クエストを追加'}</h2>
+        {/* Right Column - Quest Management */}
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-800 mb-4">クエスト管理</h2>
 
-          <div className="form-group">
-            <label>クエスト名</label>
-            <input
-              type="text"
-              value={questName}
-              onChange={(e) => setQuestName(e.target.value)}
-              placeholder="クエスト名を入力..."
-              className="form-input"
-            />
-          </div>
+            {/* Quest Input */}
+            <div className="space-y-3 mb-4">
+              <input
+                type="text"
+                value={newQuest}
+                onChange={(e) => setNewQuest(e.target.value)}
+                placeholder="新しいクエストを入力..."
+                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                onKeyPress={(e) => e.key === 'Enter' && handleAddQuest()}
+              />
 
-          <div className="form-group">
-            <label>説明（任意）</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="クエストの説明を入力..."
-              className="form-textarea"
-            />
-          </div>
+              {/* 難易度選択 */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setSelectedDifficulty('easy')}
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                    selectedDifficulty === 'easy'
+                      ? 'bg-green-500 text-white shadow-md'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  優しい (10 XP)
+                </button>
+                <button
+                  onClick={() => setSelectedDifficulty('normal')}
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                    selectedDifficulty === 'normal'
+                      ? 'bg-blue-500 text-white shadow-md'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  普通 (30 XP)
+                </button>
+                <button
+                  onClick={() => setSelectedDifficulty('hard')}
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                    selectedDifficulty === 'hard'
+                      ? 'bg-red-500 text-white shadow-md'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  難しい (50 XP)
+                </button>
+              </div>
 
-          <div className="form-group">
-            <label>難易度</label>
-            <select
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value as 'easy' | 'medium' | 'hard')}
-              className="form-select"
-            >
-              <option value="easy">🟢 簡単 (10 XP)</option>
-              <option value="medium">🟡 普通 (30 XP)</option>
-              <option value="hard">🔴 難しい (50 XP)</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>タイプ</label>
-            <select
-              value={questType}
-              onChange={(e) => setQuestType(e.target.value as 'one_time' | 'recurring')}
-              className="form-select"
-            >
-              <option value="one_time">📌 単発（達成後に削除）</option>
-              <option value="recurring">🔄 連続（繰り返し可能）</option>
-            </select>
-          </div>
-
-          <div className="button-group">
-            <button onClick={handleAddQuest} className="add-button">
-              {editingId ? '更新する' : '追加する'}
-            </button>
-            {editingId && (
-              <button onClick={resetForm} className="cancel-button">
-                キャンセル
+              <button
+                onClick={handleAddQuest}
+                className="w-full bg-orange-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
+              >
+                クエストを追加
               </button>
-            )}
+            </div>
+
+            {/* Quest List */}
+            <div className="space-y-3">
+              {quests.map((quest) => (
+                <div
+                  key={quest.id}
+                  className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm font-medium text-slate-800">{quest.name}</span>
+                    <span className="text-xs bg-yellow-100 text-red-600 px-2 py-1 rounded font-semibold">
+                      +{quest.xp} XP
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteQuest(quest.id)}
+                    className="text-red-500 hover:text-red-700 p-1"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
+
+          {/* Complete Button */}
+          <button
+            onClick={handleComplete}
+            className="w-full bg-orange-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
+          >
+            完了してクエストボードへ
+          </button>
         </div>
       </div>
     </div>

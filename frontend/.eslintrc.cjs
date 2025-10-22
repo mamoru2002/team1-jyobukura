@@ -17,5 +17,6 @@ module.exports = {
     ],
     'prettier/prettier': 'error',
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    'react/react-in-jsx-scope': 'off', // React 17+ では不要
   },
 }

@@ -32,7 +32,7 @@ module Api
       def set_action_plan
         user_id = params[:id]
         @action_plan = ActionPlan.find_by(user_id: user_id)
-        
+
         if @action_plan.nil?
           render json: { error: 'ActionPlan not found' }, status: :not_found
         end
@@ -56,4 +56,3 @@ module Api
     end
   end
 end
-

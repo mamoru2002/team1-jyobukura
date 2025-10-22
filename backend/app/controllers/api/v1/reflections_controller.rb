@@ -32,7 +32,7 @@ module Api
       def set_reflection
         user_id = params[:id]
         @reflection = Reflection.find_by(user_id: user_id)
-        
+
         if @reflection.nil?
           render json: { error: 'Reflection not found' }, status: :not_found
         end
@@ -56,4 +56,3 @@ module Api
     end
   end
 end
-
