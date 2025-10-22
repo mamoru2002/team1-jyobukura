@@ -14,14 +14,13 @@ const STORAGE_KEY_MOTIVATIONS = 'step3SelectedMotivations';
 const STORAGE_KEY_PREFERENCES = 'step3SelectedPreferences';
 const MAX_SELECTIONS_PER_TYPE = 4;
 
-const toItemId = (type: SelectionType, label: string): string => `${type}:${encodeURIComponent(label)}`;
+const toItemId = (type: SelectionType, label: string): string =>
+  `${type}:${encodeURIComponent(label)}`;
 
 const fromStorage = (key: string): string[] => {
   try {
     const stored = localStorage.getItem(key);
-    if (!stored) {
-      return [];
-    }
+    if (!stored) return [];
     const parsed = JSON.parse(stored);
     return Array.isArray(parsed)
       ? parsed.filter((item): item is string => typeof item === 'string')
@@ -43,9 +42,7 @@ const saveToStorage = (key: string, values: string[]): void => {
 const normalizeSelection = (values: string[], type: SelectionType): string[] => {
   const normalized = new Set<string>();
   values.forEach((value) => {
-    if (typeof value !== 'string') {
-      return;
-    }
+    if (typeof value !== 'string') return;
     if (value.startsWith(`${type}:`)) {
       normalized.add(value);
       return;
@@ -59,12 +56,8 @@ const normalizeSelection = (values: string[], type: SelectionType): string[] => 
 };
 
 const toErrorMessage = (error: unknown): string => {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (typeof error === 'string') {
-    return error;
-  }
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
   return '不明なエラーが発生しました。';
 };
 
@@ -73,6 +66,7 @@ const Step3 = () => {
   const [beforeSketchUrl, setBeforeSketchUrl] = useState<string | null>(null);
   const [motivations, setMotivations] = useState<MotivationMaster[]>([]);
   const [preferences, setPreferences] = useState<PreferenceMaster[]>([]);
+
   const [selectedMotivationIds, setSelectedMotivationIds] = useState<string[]>(() =>
     normalizeSelection(fromStorage(STORAGE_KEY_MOTIVATIONS), 'motivation').slice(
       0,
@@ -85,6 +79,7 @@ const Step3 = () => {
       MAX_SELECTIONS_PER_TYPE
     )
   );
+
   const [motivationInput, setMotivationInput] = useState('');
   const [preferenceInput, setPreferenceInput] = useState('');
   const [loading, setLoading] = useState(true);
@@ -95,9 +90,7 @@ const Step3 = () => {
 
   useEffect(() => {
     const url = localStorage.getItem('beforeSketchDataUrl');
-    if (url) {
-      setBeforeSketchUrl(url);
-    }
+    if (url) setBeforeSketchUrl(url);
   }, []);
 
   useEffect(() => {
@@ -108,49 +101,41 @@ const Step3 = () => {
     saveToStorage(STORAGE_KEY_PREFERENCES, selectedPreferenceIds);
   }, [selectedPreferenceIds]);
 
-  const loadMasters = useCallback(
-    async (showLoader = true) => {
-      if (showLoader) {
-        setLoading(true);
-      }
-      setFetchError(null);
-      try {
-        const [motivationList, preferenceList] = await Promise.all([
-          fetchMotivationMasters(USER_ID),
-          fetchPreferenceMasters(USER_ID),
-        ]);
-        setMotivations(motivationList);
-        setPreferences(preferenceList);
-      } catch (error) {
-        setFetchError(toErrorMessage(error));
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
+  const loadMasters = useCallback(async (showLoader = true) => {
+    if (showLoader) setLoading(true);
+    setFetchError(null);
+    try {
+      const [motivationList, preferenceList] = await Promise.all([
+        fetchMotivationMasters(USER_ID),
+        fetchPreferenceMasters(USER_ID),
+      ]);
+      setMotivations(motivationList);
+      setPreferences(preferenceList);
+    } catch (error) {
+      setFetchError(toErrorMessage(error));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     void loadMasters();
   }, [loadMasters]);
 
-  const motivationNames = useMemo(() => motivations.map((item) => item.name), [motivations]);
-  const preferenceNames = useMemo(() => preferences.map((item) => item.name), [preferences]);
+  const motivationNames = useMemo(() => motivations.map((i) => i.name), [motivations]);
+  const preferenceNames = useMemo(() => preferences.map((i) => i.name), [preferences]);
 
   const toggleSelection = (type: SelectionType, label: string) => {
     const trimmed = label.trim();
-    if (!trimmed) {
-      return;
-    }
+    if (!trimmed) return;
     const itemId = toItemId(type, trimmed);
+
     if (type === 'motivation') {
       setSelectedMotivationIds((prev) => {
         const isSelected = prev.includes(itemId);
         if (isSelected) {
-          if (prev.length <= MAX_SELECTIONS_PER_TYPE) {
-            setMotivationError(null);
-          }
-          return prev.filter((value) => value !== itemId);
+          if (prev.length <= MAX_SELECTIONS_PER_TYPE) setMotivationError(null);
+          return prev.filter((v) => v !== itemId);
         }
         if (prev.length >= MAX_SELECTIONS_PER_TYPE) {
           setMotivationError(`最大${MAX_SELECTIONS_PER_TYPE}件まで選択できます。`);
@@ -163,10 +148,8 @@ const Step3 = () => {
       setSelectedPreferenceIds((prev) => {
         const isSelected = prev.includes(itemId);
         if (isSelected) {
-          if (prev.length <= MAX_SELECTIONS_PER_TYPE) {
-            setPreferenceError(null);
-          }
-          return prev.filter((value) => value !== itemId);
+          if (prev.length <= MAX_SELECTIONS_PER_TYPE) setPreferenceError(null);
+          return prev.filter((v) => v !== itemId);
         }
         if (prev.length >= MAX_SELECTIONS_PER_TYPE) {
           setPreferenceError(`最大${MAX_SELECTIONS_PER_TYPE}件まで選択できます。`);
@@ -181,35 +164,28 @@ const Step3 = () => {
   const handleCreate = async (type: SelectionType) => {
     const value = (type === 'motivation' ? motivationInput : preferenceInput).trim();
     if (!value) {
-      if (type === 'motivation') {
-        setMotivationError('内容を入力してください。');
-      } else {
-        setPreferenceError('内容を入力してください。');
-      }
+      if (type === 'motivation') setMotivationError('内容を入力してください。');
+      else setPreferenceError('内容を入力してください。');
       return;
     }
     if (value.length > MAX_LABEL_LENGTH) {
       const message = `最大${MAX_LABEL_LENGTH}文字までです。`;
-      if (type === 'motivation') {
-        setMotivationError(message);
-      } else {
-        setPreferenceError(message);
-      }
+      if (type === 'motivation') setMotivationError(message);
+      else setPreferenceError(message);
       return;
     }
 
     setCreatingType(type);
     setMotivationError(null);
     setPreferenceError(null);
+
     try {
       if (type === 'motivation') {
         const created = await createMotivationMaster(USER_ID, value);
         setMotivationInput('');
         const createdId = toItemId('motivation', created.name.trim());
         setSelectedMotivationIds((prev) => {
-          if (prev.includes(createdId)) {
-            return prev;
-          }
+          if (prev.includes(createdId)) return prev;
           if (prev.length >= MAX_SELECTIONS_PER_TYPE) {
             setMotivationError(`最大${MAX_SELECTIONS_PER_TYPE}件まで選択できます。`);
             return prev;
@@ -222,9 +198,7 @@ const Step3 = () => {
         setPreferenceInput('');
         const createdId = toItemId('preference', created.name.trim());
         setSelectedPreferenceIds((prev) => {
-          if (prev.includes(createdId)) {
-            return prev;
-          }
+          if (prev.includes(createdId)) return prev;
           if (prev.length >= MAX_SELECTIONS_PER_TYPE) {
             setPreferenceError(`最大${MAX_SELECTIONS_PER_TYPE}件まで選択できます。`);
             return prev;
@@ -236,17 +210,15 @@ const Step3 = () => {
       await loadMasters(false);
     } catch (error) {
       const message = toErrorMessage(error);
-      if (type === 'motivation') {
-        setMotivationError(message);
-      } else {
-        setPreferenceError(message);
-      }
+      if (type === 'motivation') setMotivationError(message);
+      else setPreferenceError(message);
     } finally {
       setCreatingType(null);
     }
   };
 
-  const isNextEnabled = selectedMotivationIds.length > 0 || selectedPreferenceIds.length > 0;
+  const isNextEnabled =
+    selectedMotivationIds.length > 0 || selectedPreferenceIds.length > 0;
 
   return (
     <main className="step-page step3 flex-1 p-12 flex flex-col">
@@ -264,7 +236,10 @@ const Step3 = () => {
           あなたの仕事の原動力となる価値観を選んでみましょう。それぞれ3〜4個が目安です。
         </p>
         <div className="w-full bg-slate-200 rounded-full h-2 mt-4">
-          <div className="bg-orange-600 h-2 rounded-full progress-bar-fill" style={{ width: '42.6%' }}></div>
+          <div
+            className="bg-orange-600 h-2 rounded-full progress-bar-fill"
+            style={{ width: '42.6%' }}
+          />
         </div>
       </header>
 
@@ -288,6 +263,8 @@ const Step3 = () => {
               {fetchError}
             </div>
           ) : null}
+
+          {/* 動機 */}
           <article className="selection-panel bg-white rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xl font-bold">動機</h3>
@@ -326,10 +303,10 @@ const Step3 = () => {
               <input
                 type="text"
                 value={motivationInput}
-                onChange={(event) => setMotivationInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
+                onChange={(e) => setMotivationInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
                     void handleCreate('motivation');
                   }
                 }}
@@ -351,6 +328,7 @@ const Step3 = () => {
             ) : null}
           </article>
 
+          {/* 嗜好 */}
           <article className="selection-panel bg-white rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xl font-bold">嗜好</h3>
@@ -389,10 +367,10 @@ const Step3 = () => {
               <input
                 type="text"
                 value={preferenceInput}
-                onChange={(event) => setPreferenceInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
+                onChange={(e) => setPreferenceInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
                     void handleCreate('preference');
                   }
                 }}
