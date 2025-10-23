@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getDashboard, completeAction } from '../services/api';
-import type { User, WorkItem, Action } from '../types';
+import { getDashboard } from '../services/api';
+import type { User, WorkItem } from '../types';
 import './Step8.css';
 
 interface LocalQuest {
@@ -100,6 +100,8 @@ const Step8 = () => {
       {/* ヘッダー - レベル情報 */}
       <div className="dashboard-header">
         <div className="level-display">
+          <h1>ダッシュボード</h1>
+          {user ? <p className="user-greeting">{user.name}さん、お疲れさまです</p> : null}
           <div className="user-level">
             <div className="level-info">
               <span className="level-label">レベル</span>
