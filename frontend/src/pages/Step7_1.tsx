@@ -3,7 +3,13 @@ import { useState, useEffect } from 'react';
 interface WorkItem {
   id: number;
   name: string;
-  reframe: string;
+  energyPercentage: number;
+  motivations: string[];
+  preferences: string[];
+  plan: {
+    person: string | null;
+    action: string;
+  } | null;
   roles: string[];
 }
 
@@ -116,50 +122,68 @@ const Step7_1 = () => {
                   className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm"
                 >
                   <h3 className="font-semibold text-slate-800 mb-2">{item.name}</h3>
+
+                  {/* エネルギー */}
                   <div className="mb-3">
                     <div className="w-full bg-slate-200 rounded-full h-2">
                       <div
                         className="bg-orange-500 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${item.energy_percentage}%` }}
+                        style={{ width: `${item.energyPercentage}%` }}
                       ></div>
                     </div>
-                    <p className="text-sm text-slate-600 mt-1">{item.energy_percentage}%</p>
+                    <p className="text-sm text-slate-600 mt-1">{item.energyPercentage}%</p>
                   </div>
-                  {item.reframe && <p className="text-sm text-slate-600 mb-3">{item.reframe}</p>}
-                  <div className="flex flex-wrap gap-2">
-                    {item.motivations?.map((motivation) => (
-                      <span
-                        key={motivation.id}
-                        className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded"
-                      >
-                        {motivation.name}
-                      </span>
-                    ))}
-                    {item.preferences?.map((preference) => (
-                      <span
-                        key={preference.id}
-                        className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded"
-                      >
-                        {preference.name}
-                      </span>
-                    ))}
-                    {item.people?.map((person) => (
-                      <span
-                        key={person.id}
-                        className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded"
-                      >
-                        {person.name}
-                      </span>
-                    ))}
-                    {item.role_categories?.map((role) => (
-                      <span
-                        key={role.id}
-                        className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded"
-                      >
-                        {role.name}
-                      </span>
-                    ))}
-                  </div>
+
+                  {/* 動機・嗜好 */}
+                  {(item.motivations.length > 0 || item.preferences.length > 0) && (
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {item.motivations.map((motivation, index) => (
+                        <span
+                          key={`m-${index}`}
+                          className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded"
+                        >
+                          {motivation}
+                        </span>
+                      ))}
+                      {item.preferences.map((preference, index) => (
+                        <span
+                          key={`p-${index}`}
+                          className="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded"
+                        >
+                          {preference}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* アクションプラン */}
+                  {item.plan && (
+                    <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="text-xs text-blue-700 font-medium mb-1">アクションプラン</div>
+                      {item.plan.person && (
+                        <div className="text-xs text-blue-600 mb-1">
+                          <span className="font-medium">誰に:</span> {item.plan.person}
+                        </div>
+                      )}
+                      <div className="text-xs text-blue-600">
+                        <span className="font-medium">何をする:</span> {item.plan.action}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 役割 */}
+                  {item.roles.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {item.roles.map((role, index) => (
+                        <span
+                          key={`r-${index}`}
+                          className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded"
+                        >
+                          {role}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

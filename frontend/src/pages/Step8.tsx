@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getDashboard } from '../services/api';
-import type { User, WorkItem } from '../types';
+import type { User } from '../types';
 import './Step8.css';
 
 interface LocalQuest {
@@ -10,35 +10,36 @@ interface LocalQuest {
   xp: number;
 }
 
-interface WorkCard {
-  id: number;
-  content: string;
-  energyPercentage: number;
-}
 
 interface WorkItem {
   id: number;
   name: string;
-  reframe: string;
+  energyPercentage: number;
+  motivations: string[];
+  preferences: string[];
+  plan: {
+    person: string | null;
+    action: string;
+  } | null;
   roles: string[];
 }
 
 const Step8 = () => {
   const navigate = useNavigate();
   const userId = 1; // 仮のユーザーID
-  const [user, setUser] = useState<User | null>(null);
+  const [, setUser] = useState<User | null>(null);
   const [workItems, setWorkItems] = useState<WorkItem[]>([]); // STEP6のWorkItems
   const [quests, setQuests] = useState<LocalQuest[]>([]);
-  const [step1Cards, setStep1Cards] = useState<WorkCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [level, setLevel] = useState(1);
   const [xp, setXp] = useState(0);
+
+  console.log('STEP8 component rendered');
 
   useEffect(() => {
     loadDashboard();
     loadLocalQuests();
     loadUserProgress();
-    loadStep1Cards();
     loadStep6WorkItems(); // STEP6のWorkItemsを読み込む
   }, []);
 
@@ -46,7 +47,6 @@ const Step8 = () => {
     try {
       const data = await getDashboard(userId);
       setUser(data.user);
-      setWorkItems(data.work_items || []);
       setLoading(false);
     } catch (error) {
       console.error('ダッシュボードの読み込みに失敗しました:', error);
@@ -61,12 +61,6 @@ const Step8 = () => {
     }
   };
 
-  const loadStep1Cards = () => {
-    const savedCards = localStorage.getItem('step1-cards');
-    if (savedCards) {
-      setStep1Cards(JSON.parse(savedCards));
-    }
-  };
 
   const loadStep6WorkItems = () => {
     const savedWorkItems = localStorage.getItem('step6-work-items');
@@ -83,7 +77,7 @@ const Step8 = () => {
   };
 
   const handleCompleteQuest = (questId: number) => {
-    const quest = quests.find((q) => q.id === questId);
+    const quest = quests.find((q: LocalQuest) => q.id === questId);
     if (!quest) return;
 
     // XPを加算
@@ -99,7 +93,8 @@ const Step8 = () => {
     // 状態を更新
     setXp(newXp);
     setLevel(newLevel);
-    saveUserProgress(newXp, newLevel);
+    localStorage.setItem('user-xp', newXp.toString());
+    localStorage.setItem('user-level', newLevel.toString());
   };
 
   const handleEditJobcrafting = () => {
@@ -115,8 +110,6 @@ const Step8 = () => {
       {/* ヘッダー - レベル情報 */}
       <div className="dashboard-header">
         <div className="level-display">
-          <h1>ダッシュボード</h1>
-          {user ? <p className="user-greeting">{user.name}さん、お疲れさまです</p> : null}
           <div className="user-level">
             <div className="level-info">
               <span className="level-label">レベル</span>
@@ -159,18 +152,83 @@ const Step8 = () => {
                 </button>
               </div>
             ) : (
-              <div className="work-items-grid">
-                {workItems.map((item) => (
-                  <div key={item.id} className="work-item-card">
-                    <h3>{item.name}</h3>
-                    {item.reframe && <p className="reframe-text">{item.reframe}</p>}
-                    {item.roles.length > 0 && (
-                      <div className="roles-container">
-                        {item.roles.map((role, index) => (
-                          <span key={index} className="role-tag">{role}</span>
+              <div className="grid grid-cols-2 gap-6">
+                {workItems.map((item: WorkItem) => (
+                  <div
+                    key={item.id}
+                    className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    {/* タイトル */}
+                    <p className="text-base font-semibold break-words mb-2">{item.name}</p>
+
+                    {/* エネルギー（Step2 と同じ表現） */}
+                    <div className="mb-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-slate-600">エネルギー</span>
+                        <span className="text-xs font-medium text-slate-800">
+                          {item.energyPercentage}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-1.5 mt-1">
+                        <div
+                          className="bg-gradient-to-r from-orange-500 to-orange-600 h-1.5 rounded-full transition-all duration-300"
+                          style={{ width: `${item.energyPercentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {/* 動機・嗜好（Step4） */}
+                    {(item.motivations.length > 0 || item.preferences.length > 0) && (
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {item.motivations.map((motivation: string, index: number) => (
+                          <span
+                            key={`m-${index}-${motivation}`}
+                            className="text-xs font-semibold py-1 px-2 rounded-full text-orange-600 bg-orange-200"
+                          >
+                            {motivation}
+                          </span>
+                        ))}
+                        {item.preferences.map((preference: string, index: number) => (
+                          <span
+                            key={`p-${index}-${preference}`}
+                            className="text-xs font-semibold py-1 px-2 rounded-full text-amber-600 bg-amber-200"
+                          >
+                            {preference}
+                          </span>
                         ))}
                       </div>
                     )}
+
+                    {/* 計画（Step5） */}
+                    {item.plan && (
+                      <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="text-xs text-blue-700 font-medium mb-1">アクションプラン</div>
+                        {item.plan.person && (
+                          <div className="text-xs text-blue-600 mb-1">
+                            <span className="font-medium">誰に:</span> {item.plan.person}
+                          </div>
+                        )}
+                        <div className="text-xs text-blue-600">
+                          <span className="font-medium">何をする:</span> {item.plan.action}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 役割（Step6で付与） */}
+                    <div className="border-t border-slate-200 pt-3 min-h-[32px] flex flex-wrap gap-2">
+                      {item.roles.length === 0 ? (
+                        <span className="text-xs text-slate-400">（役割なし）</span>
+                      ) : (
+                        item.roles.map((role: string, index: number) => (
+                          <span
+                            key={index}
+                            className="text-xs font-semibold py-1 px-2 rounded-full text-white bg-green-500"
+                          >
+                            {role}
+                          </span>
+                        ))
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -185,24 +243,24 @@ const Step8 = () => {
                 <p>まだクエストが登録されていません</p>
               </div>
             ) : (
-              <ul className="quests-list">
-                {quests.map((quest) => (
-                  <li key={quest.id} className="quest-card">
-                    <div className="quest-content">
-                    <button onClick={() => handleCompleteQuest(quest.id)} className="complete-btn">
-                      達成！
-                    </button>
+                    <ul className="quests-list">
+                      {quests.map((quest: LocalQuest) => (
+                        <li key={quest.id} className="quest-card">
+                          <div className="quest-content">
+                            <button onClick={() => handleCompleteQuest(quest.id)} className="complete-btn">
+                              達成！
+                            </button>
 
-                      <div className="quest-details">
-                        <h3>{quest.name}</h3>
-                        <div className="quest-badges">
-                          <span className="xp-badge">+{quest.xp} XP</span>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                            <div className="quest-details">
+                              <h3>{quest.name}</h3>
+                              <div className="quest-badges">
+                                <span className="xp-badge">+{quest.xp} XP</span>
+                              </div>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
             )}
           </div>
         </div>

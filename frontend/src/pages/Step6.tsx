@@ -6,6 +6,8 @@ import { useNavigate } from 'react-router-dom';
 const LS = {
   step1Cards: 'step1-cards', // Step1 のカード
   step4Assignments: 'step4CardAssignments', // Step4 のカード×タグ紐づけ（配列）
+  step5People: 'step5People', // Step5 の人物パレット
+  step5Plans: 'step5CardPlans', // Step5 のカードごとの計画
   step6Roles: 'step6-roles', // 役割パレット
   step6WorkItems: 'step6-work-items', // 各カードへの役割割り当てスナップショット
 } as const;
@@ -32,12 +34,18 @@ type TagChip = {
   label: string;
 };
 
+type CardPlan = {
+  person: string | null; // 誰に
+  action: string; // 何をする（1文）
+};
+
 type WorkItemView = {
   id: number;
   name: string;
   energyPercentage: number;
   motivations: string[];
   preferences: string[];
+  plan: CardPlan | null; // Step5 で付与
   roles: string[]; // Step6 で付与
 };
 
@@ -83,13 +91,16 @@ const Step6 = () => {
   const [workItems, setWorkItems] = useState<WorkItemView[]>([]);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
 
-  /** 初期ロード：Step1/Step4 のデータを統合し、Step6 保存済みの役割割当があれば上書き */
+  /** 初期ロード：Step1/Step4/Step5 のデータを統合し、Step6 保存済みの役割割当があれば上書き */
   useEffect(() => {
     // Step1 カード
     const step1Cards = parseJSON<Step1Card[]>(localStorage.getItem(LS.step1Cards), []);
 
     // Step4 紐づけ（配列）
     const assignments = parseJSON<Step4Assignment[]>(localStorage.getItem(LS.step4Assignments), []);
+
+    // Step5 計画（カードIDごと）
+    const cardPlans = parseJSON<Record<number, CardPlan>>(localStorage.getItem(LS.step5Plans), {});
 
     // カードIDごとの動機/嗜好を構築
     const byCard = new Map<number, { motivations: string[]; preferences: string[] }>();
@@ -111,6 +122,7 @@ const Step6 = () => {
     // ベース組み立て（Step1優先）
     let base: WorkItemView[] = step1Cards.map((c) => {
       const tags = byCard.get(c.id) ?? { motivations: [], preferences: [] };
+      const plan = cardPlans[c.id] ?? null;
       const saved = savedWork.find((w) => w.id === c.id);
       return {
         id: c.id,
@@ -118,6 +130,7 @@ const Step6 = () => {
         energyPercentage: typeof c.energyPercentage === 'number' ? c.energyPercentage : 0,
         motivations: tags.motivations.slice(),
         preferences: tags.preferences.slice(),
+        plan: plan,
         roles: saved?.roles ?? [],
       };
     });
@@ -129,7 +142,8 @@ const Step6 = () => {
           motivations: saved.motivations ?? [],
           preferences: saved.preferences ?? [],
         };
-        return { ...saved, motivations: tags.motivations, preferences: tags.preferences };
+        const plan = cardPlans[saved.id] ?? saved.plan ?? null;
+        return { ...saved, motivations: tags.motivations, preferences: tags.preferences, plan };
       });
     }
 
@@ -278,27 +292,42 @@ const Step6 = () => {
                       </div>
                     </div>
 
-                    {/* 動機・嗜好（Step4） */}
-                    {(item.motivations.length > 0 || item.preferences.length > 0) && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {item.motivations.map((m, i) => (
-                          <span
-                            key={`m-${i}-${m}`}
-                            className="text-xs font-semibold py-1 px-2 rounded-full text-orange-600 bg-orange-200"
-                          >
-                            {m}
-                          </span>
-                        ))}
-                        {item.preferences.map((p, i) => (
-                          <span
-                            key={`p-${i}-${p}`}
-                            className="text-xs font-semibold py-1 px-2 rounded-full text-amber-600 bg-amber-200"
-                          >
-                            {p}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                     {/* 動機・嗜好（Step4） */}
+                     {(item.motivations.length > 0 || item.preferences.length > 0) && (
+                       <div className="mt-3 flex flex-wrap gap-2">
+                         {item.motivations.map((m, i) => (
+                           <span
+                             key={`m-${i}-${m}`}
+                             className="text-xs font-semibold py-1 px-2 rounded-full text-orange-600 bg-orange-200"
+                           >
+                             {m}
+                           </span>
+                         ))}
+                         {item.preferences.map((p, i) => (
+                           <span
+                             key={`p-${i}-${p}`}
+                             className="text-xs font-semibold py-1 px-2 rounded-full text-amber-600 bg-amber-200"
+                           >
+                             {p}
+                           </span>
+                         ))}
+                       </div>
+                     )}
+
+                     {/* 計画（Step5） */}
+                     {item.plan && (
+                       <div className="mt-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                         <div className="text-xs text-blue-700 font-medium mb-1">アクションプラン</div>
+                         {item.plan.person && (
+                           <div className="text-xs text-blue-600 mb-1">
+                             <span className="font-medium">誰に:</span> {item.plan.person}
+                           </div>
+                         )}
+                         <div className="text-xs text-blue-600">
+                           <span className="font-medium">何をする:</span> {item.plan.action}
+                         </div>
+                       </div>
+                     )}
 
                     {/* 役割（Step6で付与） */}
                     <div className="mt-4 border-t border-slate-200 pt-3 min-h-[32px] flex flex-wrap gap-2">
