@@ -16,11 +16,18 @@ interface WorkCard {
   energyPercentage: number;
 }
 
+interface WorkItem {
+  id: number;
+  name: string;
+  reframe: string;
+  roles: string[];
+}
+
 const Step8 = () => {
   const navigate = useNavigate();
   const userId = 1; // 仮のユーザーID
   const [user, setUser] = useState<User | null>(null);
-  const [workItems, setWorkItems] = useState<WorkItem[]>([]);
+  const [workItems, setWorkItems] = useState<WorkItem[]>([]); // STEP6のWorkItems
   const [quests, setQuests] = useState<LocalQuest[]>([]);
   const [step1Cards, setStep1Cards] = useState<WorkCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +39,7 @@ const Step8 = () => {
     loadLocalQuests();
     loadUserProgress();
     loadStep1Cards();
+    loadStep6WorkItems(); // STEP6のWorkItemsを読み込む
   }, []);
 
   const loadDashboard = async () => {
@@ -57,6 +65,13 @@ const Step8 = () => {
     const savedCards = localStorage.getItem('step1-cards');
     if (savedCards) {
       setStep1Cards(JSON.parse(savedCards));
+    }
+  };
+
+  const loadStep6WorkItems = () => {
+    const savedWorkItems = localStorage.getItem('step6-work-items');
+    if (savedWorkItems) {
+      setWorkItems(JSON.parse(savedWorkItems));
     }
   };
 
@@ -120,8 +135,8 @@ const Step8 = () => {
         </button>
       </div>
 
-      {/* 空状態 - クラフトマップもクエストもない場合 */}
-      {step1Cards.length === 0 && quests.length === 0 ? (
+            {/* 空状態 - クラフトマップもクエストもない場合 */}
+            {workItems.length === 0 && quests.length === 0 ? (
         <div className="empty-dashboard">
           <div className="empty-content">
             <h2>ようこそ！</h2>
@@ -136,7 +151,7 @@ const Step8 = () => {
           {/* 左側 - クラフティングマップ */}
           <div className="left-section">
             <h2>クラフティングマップ</h2>
-            {step1Cards.length === 0 ? (
+            {workItems.length === 0 ? (
               <div className="empty-state">
                 <p>まだクラフティングマップが作成されていません</p>
                 <button onClick={() => navigate('/step1')} className="start-btn">
@@ -145,16 +160,17 @@ const Step8 = () => {
               </div>
             ) : (
               <div className="work-items-grid">
-                {step1Cards.map((item) => (
+                {workItems.map((item) => (
                   <div key={item.id} className="work-item-card">
-                    <h3>{item.content || '（未入力）'}</h3>
-                    <div className="energy-bar">
-                      <div
-                        className="energy-fill"
-                        style={{ width: `${item.energyPercentage}%` }}
-                      ></div>
-                    </div>
-                    <p className="energy-percentage">{item.energyPercentage}%</p>
+                    <h3>{item.name}</h3>
+                    {item.reframe && <p className="reframe-text">{item.reframe}</p>}
+                    {item.roles.length > 0 && (
+                      <div className="roles-container">
+                        {item.roles.map((role, index) => (
+                          <span key={index} className="role-tag">{role}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

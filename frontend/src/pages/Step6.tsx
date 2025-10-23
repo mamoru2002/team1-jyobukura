@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface WorkItem {
@@ -17,7 +17,20 @@ const Step6 = () => {
     'チームの心理的安全性を高める調整役',
   ]);
 
-  const [workItems] = useState<WorkItem[]>([
+  useEffect(() => {
+    // 保存されたデータを読み込み
+    const savedRoles = localStorage.getItem('step6-roles');
+    const savedWorkItems = localStorage.getItem('step6-work-items');
+
+    if (savedRoles) {
+      setRoles(JSON.parse(savedRoles));
+    }
+    if (savedWorkItems) {
+      setWorkItems(JSON.parse(savedWorkItems));
+    }
+  }, []);
+
+  const [workItems, setWorkItems] = useState<WorkItem[]>([
     {
       id: 1,
       name: '定例会議の資料作成',
@@ -33,14 +46,24 @@ const Step6 = () => {
     { id: 3, name: '〇〇部長との報告', reframe: '', roles: [] },
   ]);
 
+  const saveData = () => {
+    localStorage.setItem('step6-roles', JSON.stringify(roles));
+    localStorage.setItem('step6-work-items', JSON.stringify(workItems));
+  };
+
   const addRole = () => {
     if (newRole.trim()) {
-      setRoles([...roles, newRole]);
+      const newRoles = [...roles, newRole];
+      setRoles(newRoles);
       setNewRole('');
+      localStorage.setItem('step6-roles', JSON.stringify(newRoles));
     }
   };
 
-  const handleNext = () => navigate('/step7-1');
+  const handleNext = () => {
+    saveData();
+    navigate('/step7-1');
+  };
   const handleBack = () => navigate('/step5');
 
   return (

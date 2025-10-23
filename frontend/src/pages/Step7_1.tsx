@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
-import { getWorkItems } from '../services/api';
-import type { WorkItem } from '../types';
+
+interface WorkItem {
+  id: number;
+  name: string;
+  reframe: string;
+  roles: string[];
+}
 
 const Step7_1 = () => {
   const [nextActions, setNextActions] = useState('');
@@ -22,16 +27,13 @@ const Step7_1 = () => {
     }
   }, []);
 
-  const loadWorkItems = async () => {
-    try {
-      const userId = 1; // 仮のユーザーID
-      const items = await getWorkItems(userId);
-      setWorkItems(items);
-    } catch (error) {
-      console.error('ワークアイテムの読み込みに失敗しました:', error);
-    } finally {
-      setLoading(false);
+  const loadWorkItems = () => {
+    // STEP6で保存されたデータを読み込み
+    const savedWorkItems = localStorage.getItem('step6-work-items');
+    if (savedWorkItems) {
+      setWorkItems(JSON.parse(savedWorkItems));
     }
+    setLoading(false);
   };
 
   const savePlanData = () => {
