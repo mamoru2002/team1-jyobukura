@@ -26,13 +26,3 @@ export type SelectedItem = {
   type: SelectionType;
   label: string;
 };
-
-export type BeforeSketchPayload = {
-  before_sketch_data_url?: string | null;
-  beforeSketchDataUrl?: string | null;
-  before_sketch_url?: string | null;
-  beforeSketchUrl?: string | null;
-  user?: BeforeSketchPayload | null;
-  data?: BeforeSketchPayload | { attributes?: BeforeSketchPayload | null } | null;
-  attributes?: BeforeSketchPayload | null;
-};
