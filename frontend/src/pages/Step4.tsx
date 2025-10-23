@@ -1,304 +1,211 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+// frontend/src/pages/Step4.tsx
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Placement, SelectedItem, SelectionType } from '../lib-step3-4/types';
 
-const STORAGE_KEY_MOTIVATIONS = 'step3SelectedMotivations';
-const STORAGE_KEY_PREFERENCES = 'step3SelectedPreferences';
-const STORAGE_KEY_PLACEMENTS = 'step4Placements';
+/** --- LocalStorage Keys (Step1/3/4で共通利用) --- */
+const LS_STEP1_CARDS = 'step1-cards';
+const LS_STEP3_M = 'step3SelectedMotivations';
+const LS_STEP3_P = 'step3SelectedPreferences';
+const LS_STEP4_ASSIGN = 'step4CardAssignments';
 
-const clamp01 = (value: number): number => {
-  if (Number.isNaN(value)) {
-    return 0;
-  }
-  return Math.min(1, Math.max(0, value));
+/** --- 型定義 --- */
+type SelectionType = 'motivation' | 'preference';
+
+type WorkCard = {
+  id: number;
+  content: string;
+  energyPercentage: number;
 };
 
-const toItemId = (type: SelectionType, label: string): string => `${type}:${encodeURIComponent(label)}`;
+type SelectedItem = {
+  id: string; // "motivation:xxx" | "preference:xxx"
+  type: SelectionType;
+  label: string; // decodeURIComponentした素のラベル
+};
 
-const parseStringArray = (value: string | null): string[] => {
-  if (!value) {
-    return [];
-  }
+type Assignment = {
+  cardId: number;
+  itemId: string; // SelectedItem.id
+};
+
+/** --- ユーティリティ --- */
+const parseJSON = <T,>(raw: string | null, fallback: T): T => {
   try {
-    const parsed = JSON.parse(value);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.filter((item): item is string => typeof item === 'string');
-  } catch (error) {
-    console.error('Failed to parse stored selection', error);
-    return [];
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
   }
 };
 
-const decodeSelectedItem = (rawId: string, fallbackType: SelectionType): SelectedItem | null => {
-  if (typeof rawId !== 'string' || rawId.length === 0) {
-    return null;
-  }
-  if (!rawId.includes(':')) {
-    const label = rawId.trim();
-    if (!label) {
+const toItemId = (type: SelectionType, label: string): string =>
+  `${type}:${encodeURIComponent(label)}`;
+
+/** Step3で保存された配列は以下どちらでも来る想定
+ *  - ["motivation:%E6%A5%BD%E3%81%97%E3%81%95", "motivation:..."]
+ *  - ["楽しさ", "成長する"]（型接頭辞なし）
+ */
+const decodeFromStep3 = (raw: string, fallback: SelectionType): SelectedItem | null => {
+  if (!raw) return null;
+
+  // "type:encoded" 形式
+  const colon = raw.indexOf(':');
+  if (colon >= 0) {
+    const head = raw.slice(0, colon);
+    const enc = raw.slice(colon + 1);
+    const type: SelectionType = head === 'motivation' || head === 'preference' ? head : fallback;
+    try {
+      const label = decodeURIComponent(enc).trim();
+      if (!label) return null;
+      return {
+        id: toItemId(type, label),
+        type,
+        label,
+      };
+    } catch {
       return null;
     }
-    const id = toItemId(fallbackType, label);
-    return { id, type: fallbackType, label };
   }
-  const [rawType, ...rest] = rawId.split(':');
-  const encodedLabel = rest.join(':');
-  const resolvedType: SelectionType = rawType === 'motivation' || rawType === 'preference' ? rawType : fallbackType;
-  if (!encodedLabel) {
-    return null;
-  }
-  try {
-    const label = decodeURIComponent(encodedLabel).trim();
-    if (!label) {
-      return null;
-    }
-    const id = toItemId(resolvedType, label);
-    return { id, type: resolvedType, label };
-  } catch (error) {
-    console.error('Failed to decode selection label', error);
-    return null;
-  }
-};
 
-const loadSelectedItems = (): SelectedItem[] => {
-  const motivationIds = parseStringArray(localStorage.getItem(STORAGE_KEY_MOTIVATIONS));
-  const preferenceIds = parseStringArray(localStorage.getItem(STORAGE_KEY_PREFERENCES));
-  const results: SelectedItem[] = [];
-  const seen = new Set<string>();
-
-  const pushItem = (item: SelectedItem | null) => {
-    if (item && !seen.has(item.id)) {
-      seen.add(item.id);
-      results.push(item);
-    }
+  // ラベル文字列だけの場合
+  const label = raw.trim();
+  if (!label) return null;
+  return {
+    id: toItemId(fallback, label),
+    type: fallback,
+    label,
   };
-
-  motivationIds.forEach((raw) => pushItem(decodeSelectedItem(raw, 'motivation')));
-  preferenceIds.forEach((raw) => pushItem(decodeSelectedItem(raw, 'preference')));
-
-  return results;
 };
 
-const isPlacement = (value: unknown): value is Placement => {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-  const record = value as Record<string, unknown>;
-  return (
-    typeof record.id === 'string' &&
-    typeof record.itemId === 'string' &&
-    typeof record.x === 'number' &&
-    typeof record.y === 'number'
-  );
-};
-
-const loadPlacementsFromStorage = (validIds: Set<string>): Placement[] => {
-  const stored = localStorage.getItem(STORAGE_KEY_PLACEMENTS);
-  if (!stored) {
-    return [];
-  }
-  try {
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed
-      .filter(isPlacement)
-      .map<Placement>((placement) => ({
-        id: placement.id,
-        itemId: placement.itemId,
-        x: clamp01(placement.x),
-        y: clamp01(placement.y),
-      }))
-      .filter((placement) => validIds.has(placement.itemId));
-  } catch (error) {
-    console.error('Failed to parse placements', error);
-    return [];
-  }
-};
-
+/** --- 本体 --- */
 const Step4 = () => {
   const navigate = useNavigate();
-  const overlayRef = useRef<HTMLDivElement | null>(null);
-  const [beforeSketchUrl, setBeforeSketchUrl] = useState<string | null>(null);
-  const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
-  const [placements, setPlacements] = useState<Placement[]>([]);
-  const [highlightedPlacementId, setHighlightedPlacementId] = useState<string | null>(null);
-  const [draggingPlacement, setDraggingPlacement] = useState<{ placementId: string; pointerId: number } | null>(null);
 
-  useEffect(() => {
-    const url = localStorage.getItem('beforeSketchDataUrl');
-    if (url) {
-      setBeforeSketchUrl(url);
-    }
-    const items = loadSelectedItems();
-    setSelectedItems(items);
-    const validIds = new Set(items.map((item) => item.id));
-    setPlacements(loadPlacementsFromStorage(validIds));
-  }, []);
+  /** Step1のカード（ビフォースケッチ項目） */
+  const [cards, setCards] = useState<WorkCard[]>([]);
 
-  const itemMap = useMemo(() => new Map(selectedItems.map((item) => [item.id, item])), [selectedItems]);
+  /** Step3の選択（パレット） */
+  const [palette, setPalette] = useState<SelectedItem[]>([]);
 
-  useEffect(() => {
-    setPlacements((prev) => {
-      const filtered = prev.filter((placement) => itemMap.has(placement.itemId));
-      return filtered.length === prev.length ? prev : filtered;
-    });
-  }, [itemMap]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY_PLACEMENTS, JSON.stringify(placements));
-    } catch (error) {
-      console.error('Failed to persist placements', error);
-    }
-  }, [placements]);
-
-  useEffect(() => {
-    if (!highlightedPlacementId) {
-      return undefined;
-    }
-    const timer = window.setTimeout(() => {
-      setHighlightedPlacementId(null);
-    }, 1200);
-    return () => window.clearTimeout(timer);
-  }, [highlightedPlacementId]);
-
-  const motivationItems = useMemo(
-    () => selectedItems.filter((item) => item.type === 'motivation'),
-    [selectedItems]
-  );
-  const preferenceItems = useMemo(
-    () => selectedItems.filter((item) => item.type === 'preference'),
-    [selectedItems]
+  /** 割り当て（カードID × アイテムID）の配列
+   *   同じ itemId を複数カードに割り当てOK
+   *   ただし同一カードに同じ itemId は重複不可
+   */
+  const [assignments, setAssignments] = useState<Assignment[]>(() =>
+    parseJSON<Assignment[]>(localStorage.getItem(LS_STEP4_ASSIGN), [])
   );
 
-  const handleDragStart = (itemId: string) => (event: React.DragEvent<HTMLDivElement>) => {
-    event.dataTransfer.setData('text/plain', itemId);
-    event.dataTransfer.effectAllowed = 'copyMove';
-  };
+  /** 初期読込完了フラグ（これがtrueになるまで保存を抑止） */
+  const [hydrated, setHydrated] = useState(false);
 
-  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-  };
+  /** 初期読込（Step1, Step3, Step4の順で復元） */
+  useEffect(() => {
+    // Step1
+    const step1 = parseJSON<WorkCard[]>(localStorage.getItem(LS_STEP1_CARDS), []);
+    setCards(step1);
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    if (!overlayRef.current) {
-      return;
-    }
-    const itemId = event.dataTransfer.getData('text/plain');
-    if (!itemId || !itemMap.has(itemId)) {
-      return;
-    }
-    const existing = placements.find((placement) => placement.itemId === itemId);
-    if (existing) {
-      setHighlightedPlacementId(existing.id);
-      return;
-    }
-    const rect = overlayRef.current.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) {
-      return;
-    }
-    const x = clamp01((event.clientX - rect.left) / rect.width);
-    const y = clamp01((event.clientY - rect.top) / rect.height);
-    const newPlacement: Placement = {
-      id: `${itemId}::${Date.now()}`,
-      itemId,
-      x,
-      y,
-    };
-    setPlacements((prev) => [...prev, newPlacement]);
-    setHighlightedPlacementId(newPlacement.id);
-  };
+    // Step3 -> パレット復元
+    const mRaw = parseJSON<string[]>(localStorage.getItem(LS_STEP3_M), []);
+    const pRaw = parseJSON<string[]>(localStorage.getItem(LS_STEP3_P), []);
 
-  const handlePlacementPointerDown = (placementId: string) => (
-    event: React.PointerEvent<HTMLDivElement>
-  ) => {
-    if (!overlayRef.current) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    setDraggingPlacement({ placementId, pointerId: event.pointerId });
-    setHighlightedPlacementId(placementId);
-  };
+    const items: SelectedItem[] = [];
+    const seen = new Set<string>();
 
-  const handlePlacementPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!overlayRef.current || !draggingPlacement || draggingPlacement.pointerId !== event.pointerId) {
-      return;
-    }
-    event.preventDefault();
-    const rect = overlayRef.current.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) {
-      return;
-    }
-    const x = clamp01((event.clientX - rect.left) / rect.width);
-    const y = clamp01((event.clientY - rect.top) / rect.height);
-    setPlacements((prev) =>
-      prev.map((placement) =>
-        placement.id === draggingPlacement.placementId ? { ...placement, x, y } : placement
-      )
-    );
-  };
-
-  const finishPlacementDrag = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (draggingPlacement && draggingPlacement.pointerId === event.pointerId) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-      setDraggingPlacement(null);
-    }
-  };
-
-  const removePlacement = (placementId: string) => {
-    setPlacements((prev) => prev.filter((placement) => placement.id !== placementId));
-  };
-
-  const locatePlacement = (placementId: string) => {
-    setHighlightedPlacementId(placementId);
-    const element = overlayRef.current?.querySelector<HTMLDivElement>(
-      `[data-placement-id="${placementId}"]`
-    );
-    element?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-  };
-
-  const resetPlacements = () => {
-    setPlacements([]);
-  };
-
-  const placementsByItemId = useMemo(() => {
-    const map = new Map<string, Placement>();
-    placements.forEach((placement) => {
-      if (!map.has(placement.itemId)) {
-        map.set(placement.itemId, placement);
+    mRaw.forEach((raw) => {
+      const it = decodeFromStep3(raw, 'motivation');
+      if (it && !seen.has(it.id)) {
+        seen.add(it.id);
+        items.push(it);
       }
     });
-    return map;
-  }, [placements]);
+    pRaw.forEach((raw) => {
+      const it = decodeFromStep3(raw, 'preference');
+      if (it && !seen.has(it.id)) {
+        seen.add(it.id);
+        items.push(it);
+      }
+    });
 
-  const renderCard = (item: SelectedItem) => {
-    const placement = placementsByItemId.get(item.id);
-    const isPlaced = Boolean(placement);
-    return (
-      <div
-        key={item.id}
-        className={`selection-chip rounded-lg py-2 px-4 shadow-sm flex items-center justify-between gap-3 ${
-          item.type === 'motivation'
-            ? 'bg-orange-200 text-orange-800'
-            : 'bg-amber-200 text-amber-800'
-        } ${isPlaced ? 'opacity-60 cursor-not-allowed' : 'cursor-move hover:brightness-95'}`}
-        draggable={!isPlaced}
-        onDragStart={handleDragStart(item.id)}
-      >
-        <span className="text-sm font-semibold">{item.label}</span>
-        {!isPlaced ? <span className="text-xs text-slate-500">ドラッグ</span> : <span className="text-xs text-slate-400">配置済み</span>}
-      </div>
+    // 表示順：動機→嗜好、同タイプ内は日本語ソート
+    items.sort((a, b) =>
+      a.type === b.type ? a.label.localeCompare(b.label, 'ja') : a.type === 'motivation' ? -1 : 1
     );
+    setPalette(items);
+
+    // Step4 保存済み割当をロードし、存在するitemId/カードのみ残す
+    const saved = parseJSON<Assignment[]>(localStorage.getItem(LS_STEP4_ASSIGN), []);
+    const itemSet = new Set(items.map((i) => i.id));
+    const cardSet = new Set(step1.map((c) => c.id));
+    const filtered = saved.filter((a) => itemSet.has(a.itemId) && cardSet.has(a.cardId));
+    setAssignments(filtered);
+
+    // これで初期読込完了
+    setHydrated(true);
+  }, []);
+
+  /** 保存（初期化後のみ実行） */
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(LS_STEP4_ASSIGN, JSON.stringify(assignments));
+  }, [assignments, hydrated]);
+
+  /** 参照用マップ */
+  const paletteMap = useMemo(() => new Map(palette.map((it) => [it.id, it] as const)), [palette]);
+
+  /** カードごとの割り当て辞書 { cardId: SelectedItem[] } */
+  const assignedByCard = useMemo(() => {
+    const map = new Map<number, SelectedItem[]>();
+    assignments.forEach((a) => {
+      const item = paletteMap.get(a.itemId);
+      if (!item) return;
+      const arr = map.get(a.cardId);
+      if (arr) arr.push(item);
+      else map.set(a.cardId, [item]);
+    });
+
+    // 見た目を安定させるためにタイプ/ラベルで整列
+    map.forEach((arr) =>
+      arr.sort((x, y) =>
+        x.type === y.type ? x.label.localeCompare(y.label, 'ja') : x.type === 'motivation' ? -1 : 1
+      )
+    );
+    return map;
+  }, [assignments, paletteMap]);
+
+  /** パレット → カードにドロップ */
+  const onDropToCard = useCallback(
+    (cardId: number, ev: React.DragEvent<HTMLDivElement>) => {
+      ev.preventDefault();
+      const itemId = ev.dataTransfer.getData('text/plain');
+      if (!itemId || !paletteMap.has(itemId)) return;
+
+      // 同一カードに同じitemIdは不可
+      const exists = assignments.some((a) => a.cardId === cardId && a.itemId === itemId);
+      if (exists) return;
+
+      setAssignments((prev) => [...prev, { cardId, itemId }]);
+    },
+    [assignments, paletteMap]
+  );
+
+  const onDragOver = (ev: React.DragEvent<HTMLDivElement>) => {
+    ev.preventDefault();
   };
 
-  const formatPosition = (value: number): string => `${Math.round(value * 100)}%`;
+  /** パレットのドラッグ開始 */
+  const onDragStart = (itemId: string) => (ev: React.DragEvent<HTMLDivElement>) => {
+    ev.dataTransfer.setData('text/plain', itemId);
+    ev.dataTransfer.effectAllowed = 'copyMove';
+  };
+
+  /** カード内チップ削除 */
+  const removeAssigned = (cardId: number, itemId: string) => {
+    setAssignments((prev) => prev.filter((a) => !(a.cardId === cardId && a.itemId === itemId)));
+  };
+
+  /** 全リセット */
+  const resetAll = () => {
+    setAssignments([]);
+  };
 
   return (
     <main className="step-page step4 flex-1 p-12 flex flex-col">
@@ -313,146 +220,167 @@ const Step4 = () => {
           </div>
         </div>
         <p className="text-slate-500">
-          あなたの「動機・嗜好」を仕事に結びつけ、仕事の捉え方を変えてみましょう。
+          ビフォースケッチの各項目（カード）に、あなたの「動機・嗜好」タグをドラッグ＆ドロップで結び付けましょう。
+          同じタグは複数の項目に配置できますが、同じ項目に同じタグを重複配置することはできません。
         </p>
         <div className="w-full bg-slate-200 rounded-full h-2 mt-4">
-          <div className="bg-orange-600 h-2 rounded-full progress-bar-fill" style={{ width: '56.8%' }}></div>
+          <div
+            className="bg-orange-600 h-2 rounded-full progress-bar-fill"
+            style={{ width: '56.8%' }}
+          />
         </div>
       </header>
 
       <div className="flex-1 grid grid-cols-3 gap-8 fade-in step-body">
-        <section className="sketch-workspace col-span-2 bg-slate-100 rounded-2xl p-6 flex flex-col">
-          <h3 className="font-bold mb-4 text-slate-700">あなたのビフォースケッチ（STEP1）</h3>
-          <div className="sketch-canvas relative flex-1 rounded-xl overflow-hidden border border-slate-200 bg-white">
-            {beforeSketchUrl ? (
-              <>
-                <img
-                  src={beforeSketchUrl}
-                  alt="Before sketch"
-                  className="absolute inset-0 w-full h-full object-contain"
-                />
-                <div
-                  ref={overlayRef}
-                  className="sketch-overlay absolute inset-0"
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                >
-                  {placements.map((placement) => {
-                    const item = itemMap.get(placement.itemId);
-                    if (!item) {
-                      return null;
-                    }
-                    const isHighlighted = highlightedPlacementId === placement.id;
-                    const isDragging = draggingPlacement?.placementId === placement.id;
-                    return (
-                      <div
-                        key={placement.id}
-                        data-placement-id={placement.id}
-                        className={`sketch-label absolute transform -translate-x-1/2 -translate-y-1/2 px-3 py-2 rounded-lg shadow-md text-sm font-semibold transition ${
-                          item.type === 'motivation'
-                            ? 'bg-orange-500 text-white'
-                            : 'bg-amber-500 text-white'
-                        } ${isHighlighted ? 'ring-4 ring-offset-2 ring-orange-300' : ''} ${
-                          isDragging ? 'opacity-80 scale-105' : ''
-                        }`}
-                        style={{ left: `${placement.x * 100}%`, top: `${placement.y * 100}%` }}
-                        onPointerDown={handlePlacementPointerDown(placement.id)}
-                        onPointerMove={handlePlacementPointerMove}
-                        onPointerUp={finishPlacementDrag}
-                        onPointerCancel={finishPlacementDrag}
-                      >
-                        {item.label}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm text-center px-6">
-                ビフォースケッチが見つかりません。STEP1で保存するとここに表示されます。
-              </div>
-            )}
+        {/* 左2カラム：ビフォースケッチ（カード一覧） */}
+        <section className="col-span-2 bg-slate-100 rounded-2xl p-6 overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-slate-700">あなたのビフォースケッチ（STEP1）</h3>
+            <button
+              type="button"
+              onClick={resetAll}
+              className="text-sm text-slate-500 hover:text-red-600"
+            >
+              すべての割り当てをリセット
+            </button>
           </div>
+
+          {cards.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
+              STEP1 のデータが見つかりません。STEP1で保存するとここに表示されます。
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-6">
+              {cards.map((card) => {
+                const assigned = assignedByCard.get(card.id) ?? [];
+                return (
+                  <div
+                    key={card.id}
+                    className="bg-white rounded-lg p-4 shadow-sm border border-slate-200"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-sm font-semibold text-slate-800 break-words">
+                        {card.content || '（未入力）'}
+                      </p>
+                      <div className="text-right">
+                        <div className="text-[11px] text-slate-500">エネルギー</div>
+                        <div className="text-[11px] font-medium text-slate-800">
+                          {card.energyPercentage}%
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2">
+                      <div
+                        className="bg-gradient-to-r from-orange-500 to-orange-600 h-1.5 rounded-full"
+                        style={{ width: `${card.energyPercentage}%` }}
+                      />
+                    </div>
+
+                    {/* ドロップエリア：タグが増えれば自然に高さが伸びる */}
+                    <div
+                      className={`mt-4 rounded-lg border ${
+                        assigned.length > 0
+                          ? 'border-amber-300 bg-amber-50'
+                          : 'border-dashed border-slate-300 bg-slate-50'
+                      } transition-all`}
+                      onDragOver={onDragOver}
+                      onDrop={(ev) => onDropToCard(card.id, ev)}
+                    >
+                      <div className="px-3 py-2 text-xs text-slate-500">
+                        {assigned.length > 0 ? '配置済みのタグ' : 'ここにタグをドロップ'}
+                      </div>
+
+                      <div className="px-3 pb-3 flex flex-wrap gap-2">
+                        {assigned.map((item) => (
+                          <span
+                            key={item.id}
+                            className={`inline-flex items-center gap-2 text-xs font-semibold py-1.5 px-2.5 rounded-full shadow-sm ${
+                              item.type === 'motivation'
+                                ? 'text-orange-700 bg-orange-100'
+                                : 'text-amber-700 bg-amber-100'
+                            }`}
+                          >
+                            {item.label}
+                            <button
+                              type="button"
+                              onClick={() => removeAssigned(card.id, item.id)}
+                              className="text-slate-400 hover:text-red-600"
+                              aria-label="このタグを削除"
+                              title="このタグを削除"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                        {assigned.length === 0 && (
+                          <div className="text-[11px] text-slate-400">
+                            （ドラッグ＆ドロップで追加）
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
+        {/* 右1カラム：パレット */}
         <section className="selection-palette flex flex-col space-y-6">
           <div>
             <h3 className="text-xl font-bold text-slate-700 mb-2">あなたの動機・嗜好パレット</h3>
             <p className="text-sm text-slate-500">
-              右のタグを左のビフォースケッチへドラッグ＆ドロップして配置しましょう。
+              下のタグを、左の「ビフォースケッチ項目」へドラッグ＆ドロップで配置します。
+              同じタグは複数の項目に使えます。
             </p>
           </div>
-          <div className="palette-section">
-            <h4 className="font-semibold text-slate-600 mb-2">動機</h4>
-            <div className="flex flex-col gap-3">
-              {motivationItems.length === 0 ? (
-                <p className="text-sm text-slate-400">STEP3で動機を選択するとここに表示されます。</p>
+
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <h4 className="font-semibold text-slate-700 mb-2">動機</h4>
+            <div className="flex flex-wrap gap-2">
+              {palette.filter((i) => i.type === 'motivation').length === 0 ? (
+                <p className="text-sm text-slate-400">STEP3で動機を選択すると表示されます。</p>
               ) : (
-                motivationItems.map((item) => renderCard(item))
+                palette
+                  .filter((i) => i.type === 'motivation')
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      draggable
+                      onDragStart={onDragStart(item.id)}
+                      className="cursor-move select-none inline-flex items-center text-xs font-semibold py-1.5 px-2.5 rounded-full bg-orange-200 text-orange-800 shadow-sm hover:brightness-95"
+                      title="ドラッグして配置"
+                    >
+                      {item.label}
+                    </div>
+                  ))
               )}
             </div>
           </div>
-          <div className="palette-section">
-            <h4 className="font-semibold text-slate-600 mb-2">嗜好</h4>
-            <div className="flex flex-col gap-3">
-              {preferenceItems.length === 0 ? (
-                <p className="text-sm text-slate-400">STEP3で嗜好を選択するとここに表示されます。</p>
+
+          <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <h4 className="font-semibold text-slate-700 mb-2">嗜好</h4>
+            <div className="flex flex-wrap gap-2">
+              {palette.filter((i) => i.type === 'preference').length === 0 ? (
+                <p className="text-sm text-slate-400">STEP3で嗜好を選択すると表示されます。</p>
               ) : (
-                preferenceItems.map((item) => renderCard(item))
+                palette
+                  .filter((i) => i.type === 'preference')
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      draggable
+                      onDragStart={onDragStart(item.id)}
+                      className="cursor-move select-none inline-flex items-center text-xs font-semibold py-1.5 px-2.5 rounded-full bg-amber-200 text-amber-800 shadow-sm hover:brightness-95"
+                      title="ドラッグして配置"
+                    >
+                      {item.label}
+                    </div>
+                  ))
               )}
             </div>
-          </div>
-          <div className="placed-list bg-white rounded-2xl p-5 shadow-sm flex-1 flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold text-slate-700">配置済みのタグ</h4>
-              <button
-                type="button"
-                onClick={resetPlacements}
-                className="text-sm text-slate-500 hover:text-red-600"
-              >
-                すべてリセット
-              </button>
-            </div>
-            {placements.length === 0 ? (
-              <p className="text-sm text-slate-400 flex-1 flex items-center">
-                まだ配置されていません。タグをドラッグして配置してみましょう。
-              </p>
-            ) : (
-              <ul className="space-y-3 overflow-y-auto pr-1">
-                {placements.map((placement) => {
-                  const item = itemMap.get(placement.itemId);
-                  if (!item) {
-                    return null;
-                  }
-                  return (
-                    <li key={placement.id} className="flex items-start justify-between gap-4 text-sm">
-                      <div>
-                        <p className="font-semibold text-slate-700">{item.label}</p>
-                        <p className="text-xs text-slate-400">
-                          位置: X {formatPosition(placement.x)} / Y {formatPosition(placement.y)}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => locatePlacement(placement.id)}
-                          className="px-3 py-1 bg-slate-200 text-slate-700 rounded-md hover:bg-slate-300"
-                        >
-                          位置を表示
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removePlacement(placement.id)}
-                          className="px-3 py-1 bg-red-100 text-red-600 rounded-md hover:bg-red-200"
-                        >
-                          削除
-                        </button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
           </div>
         </section>
       </div>
