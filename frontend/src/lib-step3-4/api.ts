@@ -4,7 +4,6 @@ const rawBaseUrl = import.meta.env.VITE_API_URL;
 if (!rawBaseUrl) {
   throw new Error('VITE_API_URL is not defined');
 }
-
 const API_BASE = rawBaseUrl.replace(/\/+$/, '');
 
 type JsonRecord = Record<string, unknown>;
@@ -29,14 +28,14 @@ const parseErrorMessage = async (response: Response): Promise<string> => {
         }
       }
     }
-  } catch (jsonError) {
+  } catch {
     try {
       const text = await response.clone().text();
       if (text.trim().length > 0) {
         message = text;
       }
-    } catch (textError) {
-      console.error('Failed to read error response', jsonError, textError);
+    } catch {
+      // ignore
     }
   }
   return message;
@@ -67,11 +66,12 @@ const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
 
   try {
     return JSON.parse(text) as T;
-  } catch (error) {
+  } catch {
     throw new Error('Failed to parse response JSON');
   }
 };
 
+/* ===== Masters ===== */
 export const fetchMotivationMasters = async (
   userId: number
 ): Promise<MotivationMaster[]> => {
@@ -102,4 +102,68 @@ export const createPreferenceMaster = async (
     method: 'POST',
     body: JSON.stringify({ preference_master: { user_id: userId, name } }),
   });
+};
+
+/* ===== Before Sketch (optional fetch; fallback可) ===== */
+/** 空文字は null として扱う */
+const coerceDataUrl = (value: unknown): string | null => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+const extractDataUrlFromRecord = (
+  record: Record<string, unknown> | null | undefined
+): string | null => {
+  if (!record) return null;
+  // 代表的なキー名を総当り（API 実装差異に耐える）
+  return (
+    coerceDataUrl((record as JsonRecord)['before_sketch_data_url']) ??
+    coerceDataUrl((record as JsonRecord)['beforeSketchDataUrl']) ??
+    coerceDataUrl((record as JsonRecord)['before_sketch_url']) ??
+    coerceDataUrl((record as JsonRecord)['beforeSketchUrl']) ??
+    null
+  );
+};
+
+const extractDataUrl = (payload: Record<string, unknown>): string | null => {
+  const direct = extractDataUrlFromRecord(payload);
+  if (direct) return direct;
+
+  const nestedSources: Array<unknown> = [];
+  if (payload.user && typeof payload.user === 'object') nestedSources.push(payload.user);
+  if (payload.data && typeof payload.data === 'object') {
+    nestedSources.push(payload.data);
+    const dataRecord = payload.data as Record<string, unknown>;
+    if (dataRecord.attributes && typeof dataRecord.attributes === 'object') {
+      nestedSources.push(dataRecord.attributes);
+    }
+  }
+
+  for (const src of nestedSources) {
+    if (src && typeof src === 'object') {
+      const v = extractDataUrlFromRecord(src as Record<string, unknown>);
+      if (v) return v;
+    }
+  }
+  return null;
+};
+
+/**
+ * サーバにビフォースケッチURLがある場合に取得（404/未実装時は null を返す）
+ * 実際の API パスに合わせて差し替えてOK
+ */
+export const fetchBeforeSketchDataUrl = async (userId: number): Promise<string | null> => {
+  try {
+    const payload = await request<Record<string, unknown>>(
+      `/api/v1/users/${encodeURIComponent(userId)}`
+    );
+    if (payload && typeof payload === 'object') {
+      const url = extractDataUrl(payload as Record<string, unknown>);
+      if (url) return url;
+    }
+  } catch {
+    // 未実装や 404 は無視して null
+  }
+  return null;
 };
